@@ -18,7 +18,7 @@ App de segurança pessoal com localização em tempo real, círculo de contatos 
 
 ## ✅ Pré-requisitos
 
-Antes de começar, instale na sua máquina:
+Antes de começar, instale na sua máquina (o que você não tiver:
 
 | Ferramenta | Link |
 |---|---|
