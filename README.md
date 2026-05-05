@@ -3,19 +3,19 @@ App de segurança pessoal com localização em tempo real, círculo de contatos 
 
 # 🛠️ Tecnologias utilizadas
 
-Next.js — framework React para o site
-React — biblioteca de interface
-Tailwind CSS — estilização
-Firebase — banco de dados e autenticação
-TypeScript — linguagem principal
+Next.js — framework React para o site;
+React — biblioteca de interface;
+Tailwind CSS — estilização;
+Firebase — banco de dados e autenticação;
+TypeScript — linguagem principal.
 
 
 # ✅ Pré-requisitos
 Antes de começar, instale na sua máquina:
 
-Node.js — versão LTS recomendada
-Git
-VS Code
+Node.js — versão LTS recomendada;
+Git;
+VS Code.
 
 
 # 📥 Como baixar o projeto
