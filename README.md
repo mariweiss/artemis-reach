@@ -1,7 +1,7 @@
-📍 Ártemis Reach
+# 📍 Ártemis Reach
 App de segurança pessoal com localização em tempo real, círculo de contatos e comunidade.
 
-🛠️ Tecnologias utilizadas
+# 🛠️ Tecnologias utilizadas
 
 Next.js — framework React para o site
 React — biblioteca de interface
@@ -10,7 +10,7 @@ Firebase — banco de dados e autenticação
 TypeScript — linguagem principal
 
 
-✅ Pré-requisitos
+# ✅ Pré-requisitos
 Antes de começar, instale na sua máquina:
 
 Node.js — versão LTS recomendada
@@ -18,7 +18,7 @@ Git
 VS Code
 
 
-📥 Como baixar o projeto
+# 📥 Como baixar o projeto
 1. Clone o repositório
 Abra o terminal e rode:
 bashgit clone https://github.com/mariweiss/artemis-reach.git
@@ -28,7 +28,7 @@ bashnpm install
 3. Configure as variáveis de ambiente
 Crie um arquivo .env.local na raiz do projeto com as credenciais do Firebase.
 
-⚠️ Importante: Esse arquivo não está no GitHub por segurança. Peça as chaves para a Mariana pelo WhatsApp do grupo.
+# ⚠️ Importante: Esse arquivo não está no GitHub por segurança. Peça as chaves para a Mariana pelo WhatsApp do grupo.
 
 O arquivo deve ficar assim:
 NEXT_PUBLIC_FIREBASE_API_KEY=sua-chave-aqui
@@ -41,7 +41,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=seu-app-id-aqui
 bashnpm run dev
 Abra o navegador em http://localhost:3000 🚀
 
-📁 Estrutura do projeto
+# 📁 Estrutura do projeto
 artemis-reach/
 ├── app/
 │   ├── firebase.js         → configuração do Firebase
@@ -56,14 +56,14 @@ artemis-reach/
 ├── .gitignore
 └── README.md
 
-🗄️ Banco de dados (Firebase)
+# 🗄️ Banco de dados (Firebase)
 O projeto usa o Firebase Firestore com as seguintes coleções:
 ColeçãoDescriçãousuariosCadastro e perfil dos usuárioscirculosRede de contatos de cada usuáriolocalizacoesCoordenadas GPS em tempo realrotasHistórico de trajetos frequentespostsFeed da comunidaderespostasComentários nos postsalertas_sosAlertas de emergênciadispositivosDispositivos GPS físicos vinculados
 
-📄 Páginas do site
+# 📄 Páginas do site
 RotaDescrição/Login e cadastro/comunidadeFeed de posts da comunidade/circuloLista de contatos do círculo/mapaMapa com localização em tempo real
 
-🔄 Como atualizar o projeto (dia a dia)
+# 🔄 Como atualizar o projeto (dia a dia)
 Sempre antes de começar a trabalhar, atualize o projeto com as últimas mudanças:
 bashgit pull origin main
 Depois de fazer alterações, suba para o GitHub:
