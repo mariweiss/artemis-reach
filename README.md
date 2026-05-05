@@ -1,3 +1,79 @@
+📍 Ártemis Reach
+App de segurança pessoal com localização em tempo real, círculo de contatos e comunidade.
+
+🛠️ Tecnologias utilizadas
+
+Next.js — framework React para o site
+React — biblioteca de interface
+Tailwind CSS — estilização
+Firebase — banco de dados e autenticação
+TypeScript — linguagem principal
+
+
+✅ Pré-requisitos
+Antes de começar, instale na sua máquina:
+
+Node.js — versão LTS recomendada
+Git
+VS Code
+
+
+📥 Como baixar o projeto
+1. Clone o repositório
+Abra o terminal e rode:
+bashgit clone https://github.com/mariweiss/artemis-reach.git
+cd artemis-reach
+2. Instale as dependências
+bashnpm install
+3. Configure as variáveis de ambiente
+Crie um arquivo .env.local na raiz do projeto com as credenciais do Firebase.
+
+⚠️ Importante: Esse arquivo não está no GitHub por segurança. Peça as chaves para a Mariana pelo WhatsApp do grupo.
+
+O arquivo deve ficar assim:
+NEXT_PUBLIC_FIREBASE_API_KEY=sua-chave-aqui
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=artemis-reach.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=artemis-reach
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=artemis-reach.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=seu-id-aqui
+NEXT_PUBLIC_FIREBASE_APP_ID=seu-app-id-aqui
+4. Rode o projeto
+bashnpm run dev
+Abra o navegador em http://localhost:3000 🚀
+
+📁 Estrutura do projeto
+artemis-reach/
+├── app/
+│   ├── firebase.js         → configuração do Firebase
+│   ├── page.tsx            → página de login/cadastro
+│   ├── comunidade/
+│   │   └── page.tsx        → feed da comunidade
+│   ├── circulo/
+│   │   └── page.tsx        → círculo de contatos
+│   └── mapa/
+│       └── page.tsx        → mapa em tempo real
+├── .env.local              → credenciais (NÃO vai pro GitHub)
+├── .gitignore
+└── README.md
+
+🗄️ Banco de dados (Firebase)
+O projeto usa o Firebase Firestore com as seguintes coleções:
+ColeçãoDescriçãousuariosCadastro e perfil dos usuárioscirculosRede de contatos de cada usuáriolocalizacoesCoordenadas GPS em tempo realrotasHistórico de trajetos frequentespostsFeed da comunidaderespostasComentários nos postsalertas_sosAlertas de emergênciadispositivosDispositivos GPS físicos vinculados
+
+📄 Páginas do site
+RotaDescrição/Login e cadastro/comunidadeFeed de posts da comunidade/circuloLista de contatos do círculo/mapaMapa com localização em tempo real
+
+🔄 Como atualizar o projeto (dia a dia)
+Sempre antes de começar a trabalhar, atualize o projeto com as últimas mudanças:
+bashgit pull origin main
+Depois de fazer alterações, suba para o GitHub:
+bashgit add .
+git commit -m "descrição do que você fez"
+git push origin main
+
+---
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
