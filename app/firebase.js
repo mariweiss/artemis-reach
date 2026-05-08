@@ -3,7 +3,7 @@ import { getFirestore } from "firebase/firestore"
 import { getAuth } from "firebase/auth"
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDdCk5A68VXDT9kVeiHTM-nI8km0ScT2QA",
+  apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY,
   authDomain: "artemis-reach.firebaseapp.com",
   projectId: "artemis-reach",
   storageBucket: "artemis-reach.firebasestorage.app",
