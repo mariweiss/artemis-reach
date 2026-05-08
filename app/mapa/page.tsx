@@ -1,52 +1,63 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps"
+import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps"
 import { db } from "../firebase"
 import { collection, onSnapshot, doc, setDoc } from "firebase/firestore"
+import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import Header from "../componentes/Header"
 
 const CHAVE = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
-const USUARIO_ID = "usuario_teste" // depois vira o ID real do login
+const USUARIO_ID = "usuario_teste"
+
+const cores = {
+  fundo: "#EEEAF8",
+  roxo: "#5A4997",
+  roxoEscuro: "#2F195F",
+  roxoClaro: "#BB99FF",
+  branco: "#FFFFFF",
+}
+
+const nav = [
+  { icon: Home, label: "Início", href: "/inicio" },
+  { icon: MapPin, label: "Mapa", href: "/mapa" },
+  { icon: Users, label: "Círculo", href: "/circulo" },
+  { icon: MessageSquare, label: "Comunidade", href: "/comunidade" },
+  { icon: Bell, label: "Alertas", href: "/alertas" },
+]
 
 export default function Mapa() {
   const [localizacoes, setLocalizacoes] = useState([])
   const [minhaPos, setMinhaPos] = useState(null)
   const [status, setStatus] = useState("Obtendo localização...")
+  const pathname = usePathname()
 
-  // Pega localização real do celular/navegador
   useEffect(() => {
     if (!navigator.geolocation) {
       setStatus("GPS não disponível neste dispositivo")
       return
     }
-
     const watchId = navigator.geolocation.watchPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords
         setMinhaPos({ lat: latitude, lng: longitude })
         setStatus("Localização em tempo real ativa")
-
-        // Salva no Firebase
         await setDoc(doc(db, "localizacoes", USUARIO_ID), {
           usuario_id: USUARIO_ID,
           nome: "Eu",
-          latitude,
-          longitude,
+          latitude, longitude,
           fonte: "celular",
           atualizado_em: new Date().toISOString()
         })
       },
-      (erro) => {
-        setStatus("Permissão de localização negada")
-        console.error(erro)
-      },
+      () => setStatus("Permissão de localização negada"),
       { enableHighAccuracy: true, timeout: 10000 }
     )
-
     return () => navigator.geolocation.clearWatch(watchId)
   }, [])
 
-  // Escuta localizações de todos do círculo em tempo real
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "localizacoes"), (snapshot) => {
       setLocalizacoes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
@@ -55,55 +66,46 @@ export default function Mapa() {
   }, [])
 
   return (
-    <div style={{ fontFamily: "sans-serif" }}>
-
-      {/* Header */}
-      <div style={{
-        backgroundColor: "white", padding: "16px 24px",
-        borderBottom: "1px solid #eee", display: "flex",
-        justifyContent: "space-between", alignItems: "center",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "22px" }}>📍</span>
-          <h1 style={{ fontSize: "18px", margin: 0, fontWeight: "bold" }}>Ártemis</h1>
-        </div>
-        <span style={{ fontSize: "22px", cursor: "pointer" }}>☰</span>
-      </div>
+    <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo }}>
+      <Header />
 
       {/* Status */}
       <div style={{
-        backgroundColor: "white", padding: "10px 24px",
+        backgroundColor: cores.branco, padding: "10px 20px",
         display: "flex", alignItems: "center", gap: "8px",
-        borderBottom: "1px solid #eee"
+        margin: "0 16px", borderRadius: "0 0 12px 12px",
+        boxShadow: "0 2px 8px rgba(90,73,151,0.06)"
       }}>
         <div style={{
-          width: "10px", height: "10px", borderRadius: "50%",
+          width: "8px", height: "8px", borderRadius: "50%",
           backgroundColor: status.includes("ativa") ? "#22c55e" : "#f97316"
         }} />
-        <span style={{ fontSize: "13px", color: "#555" }}>{status}</span>
+        <span style={{ fontSize: "13px", color: "#666" }}>{status}</span>
       </div>
 
       {/* Mapa */}
       <APIProvider apiKey={CHAVE}>
         <Map
-          style={{ width: "100%", height: "calc(100vh - 175px)" }}
+          style={{ width: "100%", height: "calc(100vh - 170px)" }}
           defaultCenter={minhaPos || { lat: -22.9068, lng: -43.1729 }}
           defaultZoom={15}
           mapId="artemis-map"
+          disableDefaultUI={true}
         >
-          {/* Pin da minha localização */}
           {minhaPos && (
             <AdvancedMarker position={minhaPos}>
-              <Pin
-                background="#1a1a2e"
-                borderColor="white"
-                glyphColor="white"
-              />
+              <div style={{
+                width: "36px", height: "36px", borderRadius: "50%",
+                backgroundColor: cores.roxoEscuro,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: "3px solid white",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+              }}>
+                <MapPin size={16} color={cores.branco} />
+              </div>
             </AdvancedMarker>
           )}
 
-          {/* Pins dos outros usuários */}
           {localizacoes
             .filter(loc => loc.usuario_id !== USUARIO_ID)
             .map((loc) => (
@@ -111,51 +113,82 @@ export default function Mapa() {
                 key={loc.id}
                 position={{ lat: loc.latitude, lng: loc.longitude }}
               >
-                <Pin
-                  background={loc.fonte === "dispositivo" ? "#f97316" : "#6B4C9A"}
-                  borderColor="white"
-                  glyphColor="white"
-                />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                  <div style={{
+                    width: "36px", height: "36px", borderRadius: "50%",
+                    backgroundColor: "#FDEA72",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "3px solid white",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                  }}>
+                    <MapPin size={16} color={cores.roxoEscuro} />
+                  </div>
+                  <div style={{
+                    backgroundColor: cores.branco, padding: "2px 8px",
+                    borderRadius: "10px", fontSize: "11px",
+                    fontWeight: "600", color: cores.roxoEscuro,
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.1)"
+                  }}>
+                    {loc.nome || "Usuário"}
+                  </div>
+                </div>
               </AdvancedMarker>
             ))}
         </Map>
       </APIProvider>
 
-      {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "80px", right: "24px" }}>
+      {/* Botão centralizar */}
+      <div style={{ position: "fixed", bottom: "90px", left: "24px" }}>
         <button style={{
-          width: "64px", height: "64px", borderRadius: "50%",
-          backgroundColor: "#ef4444", color: "white",
-          border: "4px solid white", fontSize: "28px",
-          cursor: "pointer", fontWeight: "bold",
-          boxShadow: "0 4px 20px rgba(239,68,68,0.6)"
+          width: "44px", height: "44px", borderRadius: "50%",
+          backgroundColor: cores.branco, border: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
         }}>
-          !
+          <Navigation size={20} color={cores.roxo} />
+        </button>
+      </div>
+
+      {/* Botão SOS */}
+      <div style={{ position: "fixed", bottom: "90px", right: "24px" }}>
+        <button style={{
+          width: "56px", height: "56px", borderRadius: "50%",
+          backgroundColor: "#ef4444", border: "4px solid white",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", boxShadow: "0 4px 20px rgba(239,68,68,0.3)"
+        }}>
+          <AlertCircle size={24} color={cores.branco} />
         </button>
       </div>
 
       {/* Navegação inferior */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
-        backgroundColor: "white", borderTop: "1px solid #eee",
+        backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
         display: "flex", justifyContent: "space-around",
-        padding: "12px 0", boxShadow: "0 -2px 10px rgba(0,0,0,0.06)"
+        padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)"
       }}>
-        {[
-          { icon: "📍", label: "Mapa", href: "/mapa" },
-          { icon: "👥", label: "Círculo", href: "/circulo" },
-          { icon: "💬", label: "Comunidade", href: "/comunidade" }
-        ].map((item) => (
-          <a key={item.label} href={item.href} style={{
-            display: "flex", flexDirection: "column",
-            alignItems: "center", gap: "4px",
-            textDecoration: "none", color: "#6B4C9A",
-            fontSize: "12px", fontWeight: "500"
-          }}>
-            <span style={{ fontSize: "20px" }}>{item.icon}</span>
-            {item.label}
-          </a>
-        ))}
+        {nav.map((item) => {
+          const ativo = pathname === item.href
+          return (
+            <Link key={item.label} href={item.href} style={{
+              display: "flex", flexDirection: "column",
+              alignItems: "center", gap: "4px",
+              textDecoration: "none",
+              color: ativo ? cores.roxo : "#aaa",
+            }}>
+              <div style={{
+                padding: "6px 16px", borderRadius: "12px",
+                backgroundColor: ativo ? `rgba(90,73,151,0.1)` : "transparent"
+              }}>
+                <item.icon size={20} />
+              </div>
+              <span style={{ fontSize: "10px", fontWeight: ativo ? "600" : "400" }}>
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )
