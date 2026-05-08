@@ -87,7 +87,7 @@ export default function Mapa() {
       <APIProvider apiKey={CHAVE}>
         <Map
           style={{ width: "100%", height: "calc(100vh - 170px)" }}
-          defaultCenter={minhaPos || { lat: -22.9068, lng: -43.1729 }}
+          center={minhaPos || { lat: -22.9068, lng: -43.1729 }}
           defaultZoom={15}
           mapId="artemis-map"
           disableDefaultUI={true}
