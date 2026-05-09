@@ -48,7 +48,6 @@ export default function Inicio() {
   const progressTimer = useRef(null)
   const contagemTimer = useRef(null)
 
-  // Autenticação e nome
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.push("/"); return }
@@ -67,7 +66,6 @@ export default function Inicio() {
     return () => unsub()
   }, [])
 
-  // Carrega contatos de emergência do Firebase
   useEffect(() => {
     if (!usuario) return
     const unsub = onSnapshot(
@@ -78,6 +76,12 @@ export default function Inicio() {
     )
     return () => unsub()
   }, [usuario])
+
+  useEffect(() => () => {
+    clearTimeout(holdTimer.current)
+    clearInterval(progressTimer.current)
+    clearInterval(contagemTimer.current)
+  }, [])
 
   function toqueSimples() {
     if (sosAtivo || alertaEnviado) return
@@ -128,17 +132,47 @@ export default function Inicio() {
   async function ativarSOS() {
     setSosAtivo(true)
     navigator.geolocation?.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords
+      const linkMaps = `https://maps.google.com/?q=${latitude},${longitude}`
       await addDoc(collection(db, "alertas_sos"), {
         usuario_id: usuario?.uid || "anonimo",
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
+        latitude,
+        longitude,
         modo_silencioso: modoSilencioso,
         ativo: true,
         criado_em: new Date().toISOString()
       })
+      if (!modoSilencioso && contatos.length > 0) {
+        const mensagem = `ALERTA DE EMERGÊNCIA\n${nomeUsuario} ativou o botão SOS.\nLocalização atual: ${linkMaps}\nPor favor, entre em contato imediatamente.`
+        contatos.forEach((contato) => {
+          const numero = contato.telefone.replace(/\D/g, "")
+          const smsLink = `sms:+55${numero}?body=${encodeURIComponent(mensagem)}`
+          window.open(smsLink, "_blank")
+        })
+      }
     })
-    // Som removido conforme solicitado
     setTimeout(() => setAlertaEnviado(true), 500)
+  }
+
+  function tocarSirene() {
+    try {
+      const ctx = new AudioContext()
+      const duracao = 3
+      for (let i = 0; i < duracao * 4; i++) {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.setValueAtTime(880, ctx.currentTime + i * 0.25)
+        osc.frequency.setValueAtTime(660, ctx.currentTime + i * 0.25 + 0.125)
+        gain.gain.setValueAtTime(0.5, ctx.currentTime + i * 0.25)
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.25 + 0.24)
+        osc.start(ctx.currentTime + i * 0.25)
+        osc.stop(ctx.currentTime + i * 0.25 + 0.25)
+      }
+    } catch (e) {
+      console.error("Erro ao tocar sirene:", e)
+    }
   }
 
   function resetarSOS() {
@@ -182,12 +216,6 @@ export default function Inicio() {
     return valor
   }
 
-  useEffect(() => () => {
-    clearTimeout(holdTimer.current)
-    clearInterval(progressTimer.current)
-    clearInterval(contagemTimer.current)
-  }, [])
-
   if (!usuario) return (
     <div style={{
       minHeight: "100vh", backgroundColor: cores.fundo,
@@ -209,14 +237,11 @@ export default function Inicio() {
     <div style={{ minHeight: "100vh", backgroundColor: cores.fundo, fontFamily: "sans-serif", paddingBottom: "80px" }}>
       <Header />
 
-      {/* Saudação */}
       <div style={{ padding: "20px 24px 0" }}>
         <p style={{ color: cores.lavanda, fontSize: "13px", margin: "0 0 2px" }}>Olá,</p>
         <h2 style={{ color: cores.roxoEscuro, fontSize: "22px", fontWeight: "800", margin: "0 0 12px" }}>
           {nomeUsuario}
         </h2>
-
-        {/* Status da área */}
         <div style={{
           display: "inline-flex", alignItems: "center", gap: "8px",
           backgroundColor: "rgba(34,197,94,0.1)", padding: "8px 16px",
@@ -232,11 +257,8 @@ export default function Inicio() {
         </div>
       </div>
 
-      {/* Botão SOS */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 24px" }}>
         <div style={{ position: "relative", marginBottom: "20px" }}>
-
-          {/* Anéis pulsantes */}
           {(sosAtivo || pressionando) && [1, 2].map(i => (
             <div key={i} style={{
               position: "absolute", top: "50%", left: "50%",
@@ -248,7 +270,6 @@ export default function Inicio() {
             }} />
           ))}
 
-          {/* Anel de progresso hold */}
           {pressionando && (
             <svg style={{
               position: "absolute", top: "50%", left: "50%",
@@ -265,7 +286,6 @@ export default function Inicio() {
             </svg>
           )}
 
-          {/* Botão SOS */}
           <button
             onClick={contagem !== null ? cancelarContagem : toqueSimples}
             onMouseDown={iniciarHold}
@@ -280,8 +300,7 @@ export default function Inicio() {
               alignItems: "center", justifyContent: "center",
               boxShadow: "0 8px 24px rgba(239,68,68,0.25)",
               transform: pressionando ? "scale(0.96)" : "scale(1)",
-              transition: "transform 0.1s",
-              position: "relative", zIndex: 1
+              transition: "transform 0.1s", position: "relative", zIndex: 1
             }}
           >
             <Shield size={36} color="white" strokeWidth={1.5} />
@@ -299,7 +318,6 @@ export default function Inicio() {
               : "Pressione e segure em emergência. Seus contatos serão notificados imediatamente."}
         </p>
 
-        {/* Status após envio */}
         {alertaEnviado && (
           <div style={{
             backgroundColor: cores.branco, borderRadius: "16px",
@@ -329,17 +347,16 @@ export default function Inicio() {
         )}
       </div>
 
-      {/* Botões de ação rápida */}
       {!alertaEnviado && (
         <div style={{ padding: "0 24px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
             {[
-              { icon: <Navigation size={18} color={cores.roxo} />, label: "Compartilhar rota", vermelho: false },
-              { icon: <Phone size={18} color="white" />, label: "Ligar 190", vermelho: true },
-              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo ESP", vermelho: false },
-              { icon: <Volume2 size={18} color={cores.roxo} />, label: "Sirene sonora", vermelho: false },
+              { icon: <Navigation size={18} color={cores.roxo} />, label: "Compartilhar rota", vermelho: false, acao: () => {} },
+              { icon: <Phone size={18} color="white" />, label: "Ligar 190", vermelho: true, acao: () => window.open("tel:190") },
+              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo ESP", vermelho: false, acao: () => {} },
+              { icon: <Volume2 size={18} color={cores.roxo} />, label: "Sirene sonora", vermelho: false, acao: tocarSirene },
             ].map((item, i) => (
-              <button key={i} style={{
+              <button key={i} onClick={item.acao} style={{
                 backgroundColor: item.vermelho ? "rgba(239,68,68,0.1)" : cores.branco,
                 border: `1px solid ${item.vermelho ? "rgba(239,68,68,0.3)" : "rgba(90,73,151,0.15)"}`,
                 borderRadius: "14px", padding: "14px 16px",
@@ -354,7 +371,6 @@ export default function Inicio() {
             ))}
           </div>
 
-          {/* Modo silencioso */}
           <button onClick={() => setModoSilencioso(!modoSilencioso)} style={{
             width: "100%", padding: "14px",
             backgroundColor: modoSilencioso ? `rgba(90,73,151,0.15)` : cores.branco,
@@ -371,7 +387,6 @@ export default function Inicio() {
         </div>
       )}
 
-      {/* Contatos de emergência */}
       <div style={{ padding: "24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <div>
@@ -457,7 +472,6 @@ export default function Inicio() {
         ))}
       </div>
 
-      {/* Modal adicionar contato */}
       {modalContato && (
         <div style={{
           position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)",
@@ -478,7 +492,6 @@ export default function Inicio() {
               </button>
             </div>
 
-            {/* Nome */}
             <label style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro, display: "block", marginBottom: "8px" }}>
               Nome
             </label>
@@ -494,7 +507,6 @@ export default function Inicio() {
               }}
             />
 
-            {/* Telefone */}
             <label style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro, display: "block", marginBottom: "8px" }}>
               Número de celular
             </label>
@@ -540,7 +552,6 @@ export default function Inicio() {
         </div>
       )}
 
-      {/* Navegação inferior */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
         backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
