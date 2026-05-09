@@ -60,6 +60,7 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=artemis-reach
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=artemis-reach.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=seu-id-aqui
 NEXT_PUBLIC_FIREBASE_APP_ID=seu-app-id-aqui
+NEXT_PUBLIC_GOOGLE_MAPS_KEY=sua-chave-aqui
 ```
 
 **4. Rode o projeto**
@@ -79,12 +80,16 @@ artemis-reach/
 ├── app/
 │   ├── firebase.js           → configuração do Firebase
 │   ├── page.tsx              → página de login/cadastro
+│   ├── inicio/
+│   │   └── page.tsx          → botoes de acesso rapido
 │   ├── comunidade/
 │   │   └── page.tsx          → feed da comunidade
 │   ├── circulo/
 │   │   └── page.tsx          → círculo de contatos
 │   └── mapa/
-│       └── page.tsx          → mapa em tempo real
+│   │   └── page.tsx          → mapa em tempo real
+│   ├── alertas/
+│   │   └── page.tsx          → notificacoes
 ├── .env.local                → credenciais (NÃO vai pro GitHub)
 ├── .gitignore
 └── README.md
@@ -112,9 +117,12 @@ artemis-reach/
 | Rota | Descrição |
 |---|---|
 | `/` | Login e cadastro |
+| `/inicio` | Bootões de acesso rápido |
 | `/comunidade` | Feed de posts da comunidade |
 | `/circulo` | Lista de contatos do círculo |
 | `/mapa` | Mapa com localização em tempo real |
+| `/benefícios e parceiros` | Feed de organizações parceiras |
+| `/alertas` | Lista de notificações |
 
 ---
 
