@@ -146,7 +146,16 @@ export default function Home() {
       await signInWithEmailAndPassword(auth, email, senha)
       setTela("modo")
     } catch (e) {
-      setErro("Email ou senha incorretos.")
+      console.log("Erro completo:", e.code, e.message)
+      if (e.code === "auth/email-already-in-use") {
+        setErro("Este email já está cadastrado. Tente fazer login.")
+      } else if (e.code === "auth/weak-password") {
+        setErro("Senha muito fraca. Use pelo menos 6 caracteres.")
+      } else if (e.code === "auth/invalid-email") {
+        setErro("Email inválido.")
+      } else {
+        setErro(`Erro: ${e.code}`)
+      }
     }
     setCarregando(false)
   }
