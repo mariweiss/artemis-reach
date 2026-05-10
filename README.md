@@ -165,8 +165,8 @@ npm run dev
 ```
 
 Quando iniciar, vai aparecer:
-Local:    http://localhost:3000
-Network:  http://XXX.XXX.X.X:3000  ← esse é o endereço do celular
+- Local:    http://localhost:3000
+- Network:  http://XXX.XXX.X.X:3000  ← esse é o endereço do celular
 
 ### Passo 3 — Acesse pelo celular
 
