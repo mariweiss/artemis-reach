@@ -22,7 +22,7 @@ function Splash({ onFim }) {
     const t1 = setTimeout(() => setFase(1), 300)
     const t2 = setTimeout(() => setFase(2), 1200)
     const t3 = setTimeout(() => setFase(3), 2000)
-    const t4 = setTimeout(() => onFim(), 2800)
+    const t4 = setTimeout(() => onFim(), 3500)
     return () => [t1, t2, t3, t4].forEach(clearTimeout)
   }, [])
 
@@ -184,7 +184,9 @@ export default function Home() {
     router.push("/inicio")
   }
 
-  if (splash) return <Splash onFim={() => setSplash(false)} />
+  if (splash) return <Splash onFim={() => {
+    setSplash(false)
+  }} />
 
   // ─── TELA DE SELEÇÃO DE MODO ───
   if (tela === "modo") return (
