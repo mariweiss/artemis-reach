@@ -142,6 +142,61 @@ git commit -m "descrição do que você fez"
 git push origin main
 ```
 
+<<<<<<< HEAD
+=======
+## 📱 Acessar o site pelo celular (localhost)
+
+Você pode testar o site no celular mesmo sem publicar, desde que o celular e o computador estejam na **mesma rede Wi-Fi**.
+
+### Passo 1 — Descubra o IP do seu computador
+
+No terminal do VS Code, rode:
+
+```bash
+ipconfig
+```
+
+Procure por **"Endereço IPv4"** — vai ser algo como: XXX.XXX.X.X
+
+### Passo 2 — Rode o projeto
+
+No terminal, rode normalmente:
+
+```bash
+npm run dev
+```
+
+Quando iniciar, vai aparecer:
+- Local:    http://localhost:3000
+- Network:  http://XXX.XXX.X.X:3000  ← esse é o endereço do celular
+
+### Passo 3 — Acesse pelo celular
+
+No navegador do celular (Chrome ou Safari), acesse: http://XXX.XXX.X.X:3000 
+
+### Passo 4 — Libere o firewall (se não abrir)
+
+Se o celular não conseguir acessar, o firewall do Windows pode estar bloqueando. Para liberar:
+1. Pesquise "Firewall do Windows Defender" no menu iniciar
+2. Clique em "Permitir um aplicativo pelo Firewall"
+3. Clique em "Alterar configurações"
+4. Procure "Node.js" na lista
+5. Marque as caixas "Privado" e "Público"
+6. Clique em OK
+
+### ⚠️ Observações importantes
+
+| Situação | Resultado |
+|---|---|
+| GPS no celular | Funciona com precisão total |
+| GPS no computador | Usa Wi-Fi/IP, menos preciso |
+| Envio de SMS (SOS) | Funciona apenas no celular |
+| Sirene sonora | Funciona nos dois |
+| Computador e celular na mesma rede | Obrigatório |
+
+> 💡 O IP pode mudar toda vez que você reconectar ao Wi-Fi. Se parar de funcionar, rode `ipconfig` de novo para pegar o novo endereço.
+
+>>>>>>> a78dccbcf3f5d9ab3d2a423b333eb4fe91e893f6
 ---
 
 
