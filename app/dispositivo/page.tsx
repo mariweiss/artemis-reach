@@ -28,9 +28,8 @@ const nav = [
 ]
 
 // UUIDs — devem ser iguais ao firmware
-const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-const CHAR_GPS_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
-const CHAR_CMD_UUID = "cba1d466-344c-4be3-ab3f-189f80dd7518"
+const SERVICE_UUID = "00001234-0000-1000-8000-00805f9b34fb"
+const CHAR_SOS_UUID = "00005678-0000-1000-8000-00805f9b34fb"
 
 export default function Dispositivo() {
     const pathname = usePathname()
@@ -60,19 +59,19 @@ export default function Dispositivo() {
 
     async function conectar() {
         if (!navigator.bluetooth) {
-            adicionarLog("Bluetooth não suportado neste navegador.", "erro")
+            adicionarLog("Bluetooth não suportado. Use Chrome ou Edge.", "erro")
             return
         }
         try {
             setStatus("buscando")
-            adicionarLog("Buscando Artemis Echo...")
+            adicionarLog("Buscando SOS_DEVICE...")
 
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ name: "Artemis Echo" }],
-                optionalServices: [SERVICE_UUID]
+                filters: [{ name: "SOS_DEVICE" }],
+                optionalServices: ["00001234-0000-1000-8000-00805f9b34fb"]
             })
 
-            adicionarLog(`Dispositivo encontrado: ${device.name}`)
+            adicionarLog("Dispositivo encontrado: " + device.name)
             deviceRef.current = device
 
             device.addEventListener("gattserverdisconnected", () => {
@@ -84,53 +83,57 @@ export default function Dispositivo() {
             adicionarLog("Conectado ao servidor GATT!")
 
             const service = await server.getPrimaryService(SERVICE_UUID)
-            adicionarLog("Serviço Artemis encontrado!")
+            adicionarLog("Serviço encontrado!")
 
-            // Característica GPS — recebe localização
-            const gpsChar = await service.getCharacteristic(CHAR_GPS_UUID)
-            await gpsChar.startNotifications()
-            gpsChar.addEventListener("characteristicvaluechanged", async (event) => {
+            // Escuta notificações do botão SOS
+            const sosChar = await service.getCharacteristic(CHAR_SOS_UUID)
+            await sosChar.startNotifications()
+
+            sosChar.addEventListener("characteristicvaluechanged", async (event) => {
                 const decoder = new TextDecoder()
                 const value = decoder.decode(event.target.value)
+                adicionarLog("Mensagem recebida: " + value, "sucesso")
 
-                if (value.startsWith("SOS:")) {
-                    adicionarLog("BOTÃO SOS PRESSIONADO NO DISPOSITIVO!", "erro")
+                // Qualquer mensagem do dispositivo aciona o SOS
+                adicionarLog("BOTÃO SOS PRESSIONADO NO DISPOSITIVO!", "erro")
 
-                    navigator.geolocation?.getCurrentPosition(async (pos) => {
-                        const { latitude, longitude } = pos.coords
-
-                        const { addDoc, collection } = await import("firebase/firestore")
-
-                        await addDoc(collection(db, "alertas_sos"), {
-                            usuario_id: usuario?.uid,
+                navigator.geolocation?.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords
+                    const { addDoc, collection } = await import("firebase/firestore")
+                    await addDoc(collection(db, "alertas_sos"), {
+                        usuario_id: usuario?.uid || "anonimo",
+                        origem: "dispositivo_echo",
+                        latitude,
+                        longitude,
+                        ativo: true,
+                        mensagem: "Botão SOS do Artemis Echo foi acionado!",
+                        criado_em: new Date().toISOString()
+                    })
+                    adicionarLog("Alerta salvo! Contatos notificados.", "sucesso")
+                }, () => {
+                    // Salva mesmo sem GPS
+                    import("firebase/firestore").then(({ addDoc, collection }) => {
+                        addDoc(collection(db, "alertas_sos"), {
+                            usuario_id: usuario?.uid || "anonimo",
                             origem: "dispositivo_echo",
-                            latitude,
-                            longitude,
                             ativo: true,
                             mensagem: "Botão SOS do Artemis Echo foi acionado!",
                             criado_em: new Date().toISOString()
                         })
-
-                        adicionarLog("Alerta salvo no Firebase!", "sucesso")
                     })
-
-                    return
-                }
+                    adicionarLog("Alerta salvo sem GPS.", "aviso")
+                })
             })
 
-            // Característica CMD — envia comandos
-            cmdCharRef.current = await service.getCharacteristic(CHAR_CMD_UUID)
-            adicionarLog("Pronto para enviar comandos!", "sucesso")
-
             setStatus("conectado")
-            adicionarLog("✓ Artemis Echo conectado com sucesso!", "sucesso")
+            adicionarLog("✓ Artemis Echo conectado!", "sucesso")
 
         } catch (err) {
             setStatus("desconectado")
             if (err.name === "NotFoundError") {
                 adicionarLog("Nenhum dispositivo selecionado.", "aviso")
             } else {
-                adicionarLog(`Erro: ${err.message}`, "erro")
+                adicionarLog("Erro: " + err.message, "erro")
             }
         }
     }
