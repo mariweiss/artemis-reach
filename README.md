@@ -195,10 +195,9 @@ Se o celular não conseguir acessar, o firewall do Windows pode estar bloqueando
 
 > 💡 O IP pode mudar toda vez que você reconectar ao Wi-Fi. Se parar de funcionar, rode `ipconfig` de novo para pegar o novo endereço.
 
->>>>>>> a78dccbcf3f5d9ab3d2a423b333eb4fe91e893f6
 ---
 
-
+(ReadMe automático do github)
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
