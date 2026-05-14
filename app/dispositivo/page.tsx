@@ -89,26 +89,32 @@ export default function Dispositivo() {
             // Característica GPS — recebe localização
             const gpsChar = await service.getCharacteristic(CHAR_GPS_UUID)
             await gpsChar.startNotifications()
-            gpsChar.addEventListener("characteristicvaluechanged", (event) => {
+            gpsChar.addEventListener("characteristicvaluechanged", async (event) => {
                 const decoder = new TextDecoder()
                 const value = decoder.decode(event.target.value)
-                const [lat, lng] = value.split(",").map(Number)
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    setGpsData({ lat, lng })
-                    setUltimaAtualizacao(new Date())
-                    adicionarLog(`GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`, "sucesso")
 
-                    // Salva no Firebase
-                    if (usuario) {
-                        setDoc(doc(db, "localizacoes", `echo_${usuario.uid}`), {
-                            usuario_id: usuario.uid,
-                            nome: "Artemis Echo",
-                            latitude: lat,
-                            longitude: lng,
-                            fonte: "dispositivo",
-                            atualizado_em: new Date().toISOString()
+                if (value.startsWith("SOS:")) {
+                    adicionarLog("BOTÃO SOS PRESSIONADO NO DISPOSITIVO!", "erro")
+
+                    navigator.geolocation?.getCurrentPosition(async (pos) => {
+                        const { latitude, longitude } = pos.coords
+
+                        const { addDoc, collection } = await import("firebase/firestore")
+
+                        await addDoc(collection(db, "alertas_sos"), {
+                            usuario_id: usuario?.uid,
+                            origem: "dispositivo_echo",
+                            latitude,
+                            longitude,
+                            ativo: true,
+                            mensagem: "Botão SOS do Artemis Echo foi acionado!",
+                            criado_em: new Date().toISOString()
                         })
-                    }
+
+                        adicionarLog("Alerta salvo no Firebase!", "sucesso")
+                    })
+
+                    return
                 }
             })
 
