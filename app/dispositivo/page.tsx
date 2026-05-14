@@ -1,0 +1,449 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { auth, db } from "../firebase"
+import { onAuthStateChanged } from "firebase/auth"
+import { doc, setDoc } from "firebase/firestore"
+import { useRouter, usePathname } from "next/navigation"
+import Link from "next/link"
+import {
+    MapPin, Users, MessageSquare, Home, Bell,
+    Bluetooth, BluetoothOff, BluetoothSearching,
+    Wifi, Battery, Navigation, Volume2, Shield,
+    AlertCircle, CheckCircle, XCircle
+} from "lucide-react"
+import Header from "../componentes/Header"
+
+const cores = {
+    fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F",
+    roxoClaro: "#BB99FF", lavanda: "#8575BD", amarelo: "#FDEA72", branco: "#FFFFFF"
+}
+
+const nav = [
+    { icon: Home, label: "Início", href: "/inicio" },
+    { icon: MapPin, label: "Mapa", href: "/mapa" },
+    { icon: Users, label: "Círculo", href: "/circulo" },
+    { icon: MessageSquare, label: "Comunidade", href: "/comunidade" },
+    { icon: Bell, label: "Alertas", href: "/alertas" },
+]
+
+// UUIDs — devem ser iguais ao firmware
+const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+const CHAR_GPS_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+const CHAR_CMD_UUID = "cba1d466-344c-4be3-ab3f-189f80dd7518"
+
+export default function Dispositivo() {
+    const pathname = usePathname()
+    const router = useRouter()
+    const [usuario, setUsuario] = useState(null)
+    const [status, setStatus] = useState("desconectado") // desconectado | buscando | conectado
+    const [gpsData, setGpsData] = useState(null)
+    const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+    const [log, setLog] = useState([])
+    const [suportaBLE, setSuportaBLE] = useState(true)
+    const deviceRef = useRef(null)
+    const cmdCharRef = useRef(null)
+
+    useEffect(() => {
+        if (!navigator.bluetooth) setSuportaBLE(false)
+        const unsub = onAuthStateChanged(auth, (user) => {
+            if (!user) { router.push("/"); return }
+            setUsuario(user)
+        })
+        return () => unsub()
+    }, [])
+
+    function adicionarLog(msg, tipo = "info") {
+        const hora = new Date().toLocaleTimeString("pt-BR")
+        setLog(prev => [{ msg, tipo, hora }, ...prev].slice(0, 20))
+    }
+
+    async function conectar() {
+        if (!navigator.bluetooth) {
+            adicionarLog("Bluetooth não suportado neste navegador.", "erro")
+            return
+        }
+        try {
+            setStatus("buscando")
+            adicionarLog("Buscando Artemis Echo...")
+
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ name: "Artemis Echo" }],
+                optionalServices: [SERVICE_UUID]
+            })
+
+            adicionarLog(`Dispositivo encontrado: ${device.name}`)
+            deviceRef.current = device
+
+            device.addEventListener("gattserverdisconnected", () => {
+                setStatus("desconectado")
+                adicionarLog("Dispositivo desconectado.", "aviso")
+            })
+
+            const server = await device.gatt.connect()
+            adicionarLog("Conectado ao servidor GATT!")
+
+            const service = await server.getPrimaryService(SERVICE_UUID)
+            adicionarLog("Serviço Artemis encontrado!")
+
+            // Característica GPS — recebe localização
+            const gpsChar = await service.getCharacteristic(CHAR_GPS_UUID)
+            await gpsChar.startNotifications()
+            gpsChar.addEventListener("characteristicvaluechanged", (event) => {
+                const decoder = new TextDecoder()
+                const value = decoder.decode(event.target.value)
+                const [lat, lng] = value.split(",").map(Number)
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    setGpsData({ lat, lng })
+                    setUltimaAtualizacao(new Date())
+                    adicionarLog(`GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`, "sucesso")
+
+                    // Salva no Firebase
+                    if (usuario) {
+                        setDoc(doc(db, "localizacoes", `echo_${usuario.uid}`), {
+                            usuario_id: usuario.uid,
+                            nome: "Artemis Echo",
+                            latitude: lat,
+                            longitude: lng,
+                            fonte: "dispositivo",
+                            atualizado_em: new Date().toISOString()
+                        })
+                    }
+                }
+            })
+
+            // Característica CMD — envia comandos
+            cmdCharRef.current = await service.getCharacteristic(CHAR_CMD_UUID)
+            adicionarLog("Pronto para enviar comandos!", "sucesso")
+
+            setStatus("conectado")
+            adicionarLog("✓ Artemis Echo conectado com sucesso!", "sucesso")
+
+        } catch (err) {
+            setStatus("desconectado")
+            if (err.name === "NotFoundError") {
+                adicionarLog("Nenhum dispositivo selecionado.", "aviso")
+            } else {
+                adicionarLog(`Erro: ${err.message}`, "erro")
+            }
+        }
+    }
+
+    async function desconectar() {
+        if (deviceRef.current?.gatt?.connected) {
+            deviceRef.current.gatt.disconnect()
+        }
+        setStatus("desconectado")
+        setGpsData(null)
+        cmdCharRef.current = null
+        adicionarLog("Desconectado manualmente.")
+    }
+
+    async function enviarComando(cmd) {
+        if (!cmdCharRef.current) {
+            adicionarLog("Dispositivo não conectado.", "erro")
+            return
+        }
+        try {
+            const encoder = new TextEncoder()
+            await cmdCharRef.current.writeValue(encoder.encode(cmd))
+            adicionarLog(`Comando enviado: ${cmd}`, "sucesso")
+        } catch (err) {
+            adicionarLog(`Erro ao enviar comando: ${err.message}`, "erro")
+        }
+    }
+
+    const statusInfo = {
+        desconectado: { cor: "#aaa", texto: "Desconectado", icon: BluetoothOff },
+        buscando: { cor: cores.amarelo, texto: "Buscando dispositivo...", icon: BluetoothSearching },
+        conectado: { cor: "#22c55e", texto: "Artemis Echo conectado", icon: Bluetooth },
+    }
+
+    const info = statusInfo[status]
+
+    return (
+        <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo, minHeight: "100vh" }}>
+            <Header />
+            <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px 16px 100px" }}>
+
+                <h2 style={{ fontSize: "22px", marginBottom: "4px", color: cores.roxoEscuro }}>
+                    Dispositivo Echo
+                </h2>
+                <p style={{ color: cores.lavanda, marginBottom: "24px", fontSize: "14px" }}>
+                    Conecte seu dispositivo Artemis Echo via Bluetooth
+                </p>
+
+                {/* Aviso navegador incompatível */}
+                {!suportaBLE && (
+                    <div style={{
+                        backgroundColor: "rgba(239,68,68,0.1)", borderRadius: "14px",
+                        padding: "14px 16px", marginBottom: "16px",
+                        border: "1px solid rgba(239,68,68,0.3)",
+                        display: "flex", alignItems: "center", gap: "10px"
+                    }}>
+                        <XCircle size={20} color="#ef4444" />
+                        <p style={{ margin: 0, fontSize: "13px", color: "#dc2626" }}>
+                            Seu navegador não suporta Web Bluetooth. Use Chrome ou Edge.
+                        </p>
+                    </div>
+                )}
+
+                {/* Card de status */}
+                <div style={{
+                    backgroundColor: cores.branco, borderRadius: "20px",
+                    padding: "24px", marginBottom: "16px",
+                    boxShadow: "0 2px 12px rgba(90,73,151,0.1)",
+                    textAlign: "center"
+                }}>
+                    <div style={{
+                        width: "80px", height: "80px", borderRadius: "50%",
+                        backgroundColor: status === "conectado" ? "rgba(34,197,94,0.1)" : status === "buscando" ? "rgba(253,234,114,0.3)" : cores.fundo,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        margin: "0 auto 16px",
+                        animation: status === "buscando" ? "pulse 1.5s ease-in-out infinite" : "none"
+                    }}>
+                        <info.icon size={36} color={info.cor} />
+                    </div>
+
+                    <p style={{ color: cores.roxoEscuro, fontWeight: "700", fontSize: "16px", margin: "0 0 4px" }}>
+                        {info.texto}
+                    </p>
+
+                    {gpsData && (
+                        <p style={{ color: cores.lavanda, fontSize: "12px", margin: "4px 0 0" }}>
+                            GPS: {gpsData.lat.toFixed(5)}, {gpsData.lng.toFixed(5)}
+                            {ultimaAtualizacao && ` • ${ultimaAtualizacao.toLocaleTimeString("pt-BR")}`}
+                        </p>
+                    )}
+
+                    <div style={{ marginTop: "20px" }}>
+                        {status === "desconectado" && (
+                            <button onClick={conectar} disabled={!suportaBLE} style={{
+                                width: "100%", padding: "14px",
+                                backgroundColor: suportaBLE ? cores.roxo : "#ccc",
+                                color: cores.branco, border: "none", borderRadius: "12px",
+                                fontSize: "15px", fontWeight: "600", cursor: suportaBLE ? "pointer" : "not-allowed",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+                            }}>
+                                <Bluetooth size={18} /> Conectar Artemis Echo
+                            </button>
+                        )}
+
+                        {status === "buscando" && (
+                            <button disabled style={{
+                                width: "100%", padding: "14px",
+                                backgroundColor: "#e5e7eb", color: "#999",
+                                border: "none", borderRadius: "12px",
+                                fontSize: "15px", fontWeight: "600", cursor: "not-allowed"
+                            }}>
+                                Buscando...
+                            </button>
+                        )}
+
+                        {status === "conectado" && (
+                            <button onClick={desconectar} style={{
+                                width: "100%", padding: "14px",
+                                backgroundColor: "rgba(239,68,68,0.1)", color: "#dc2626",
+                                border: "1px solid rgba(239,68,68,0.3)", borderRadius: "12px",
+                                fontSize: "15px", fontWeight: "600", cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+                            }}>
+                                <BluetoothOff size={18} /> Desconectar
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Comandos — só aparece quando conectado */}
+                {status === "conectado" && (
+                    <div style={{ marginBottom: "16px" }}>
+                        <p style={{ fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                            Comandos
+                        </p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                            {[
+                                { cmd: "SIRENE_ON", icon: Volume2, label: "Ativar sirene", cor: cores.roxo },
+                                { cmd: "SIRENE_OFF", icon: Volume2, label: "Desativar sirene", cor: cores.lavanda },
+                                { cmd: "SOS", icon: AlertCircle, label: "Sinal SOS", cor: "#ef4444" },
+                                { cmd: "STATUS", icon: Wifi, label: "Verificar status", cor: "#16a34a" },
+                            ].map((item) => (
+                                <button key={item.cmd} onClick={() => enviarComando(item.cmd)} style={{
+                                    backgroundColor: cores.branco, borderRadius: "14px",
+                                    padding: "14px", border: `1px solid rgba(90,73,151,0.15)`,
+                                    display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
+                                    cursor: "pointer", boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
+                                }}>
+                                    <item.icon size={22} color={item.cor} />
+                                    <span style={{ fontSize: "12px", fontWeight: "600", color: cores.roxoEscuro }}>
+                                        {item.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* GPS no mapa */}
+                {status === "conectado" && gpsData && (
+                    <div style={{ marginBottom: "16px" }}>
+                        <p
+                            style={{
+                                fontSize: "13px",
+                                fontWeight: "700",
+                                color: cores.roxoEscuro,
+                                marginBottom: "10px",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                            }}
+                        >
+                            Localização do dispositivo
+                        </p>
+
+                        <a
+                            href={`https://maps.google.com/?q=${gpsData.lat},${gpsData.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                backgroundColor: cores.branco,
+                                borderRadius: "14px",
+                                padding: "14px 16px",
+                                textDecoration: "none",
+                                boxShadow: "0 1px 4px rgba(90,73,151,0.06)",
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: "40px",
+                                    height: "40px",
+                                    borderRadius: "50%",
+                                    backgroundColor: "rgba(34,197,94,0.1)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Navigation size={20} color="#16a34a" />
+                            </div>
+
+                            <div>
+                                <p
+                                    style={{
+                                        margin: 0,
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        color: cores.roxoEscuro,
+                                    }}
+                                >
+                                    Ver no Google Maps
+                                </p>
+                                <p
+                                    style={{
+                                        margin: 0,
+                                        fontSize: "12px",
+                                        color: cores.lavanda,
+                                    }}
+                                >
+                                    {gpsData.lat.toFixed(5)}, {gpsData.lng.toFixed(5)}
+                                </p>
+                            </div>
+                        </a>
+                    </div>
+                )}
+
+                {/* Log de eventos */}
+                {log.length > 0 && (
+                    <div>
+                        <p style={{ fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                            Log de eventos
+                        </p>
+                        <div style={{
+                            backgroundColor: cores.branco, borderRadius: "14px",
+                            padding: "12px", boxShadow: "0 1px 4px rgba(90,73,151,0.06)",
+                            maxHeight: "200px", overflowY: "auto"
+                        }}>
+                            {log.map((entry, i) => (
+                                <div key={i} style={{
+                                    display: "flex", gap: "8px", alignItems: "flex-start",
+                                    padding: "6px 0",
+                                    borderBottom: i < log.length - 1 ? `1px solid ${cores.fundo}` : "none"
+                                }}>
+                                    {entry.tipo === "sucesso" && <CheckCircle size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: "2px" }} />}
+                                    {entry.tipo === "erro" && <XCircle size={14} color="#ef4444" style={{ flexShrink: 0, marginTop: "2px" }} />}
+                                    {entry.tipo === "aviso" && <AlertCircle size={14} color="#d97706" style={{ flexShrink: 0, marginTop: "2px" }} />}
+                                    {entry.tipo === "info" && <div style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: cores.lavanda, flexShrink: 0, marginTop: "2px" }} />}
+                                    <div>
+                                        <p style={{ margin: 0, fontSize: "12px", color: cores.roxoEscuro }}>{entry.msg}</p>
+                                        <p style={{ margin: 0, fontSize: "10px", color: "#bbb" }}>{entry.hora}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Instrução */}
+                <div style={{
+                    backgroundColor: `rgba(90,73,151,0.06)`, borderRadius: "14px",
+                    padding: "14px 16px", marginTop: "16px",
+                    border: `1px solid rgba(90,73,151,0.1)`
+                }}>
+                    <p style={{ margin: "0 0 8px", fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro }}>
+                        Como conectar
+                    </p>
+                    {[
+                        "Ligue o dispositivo Artemis Echo",
+                        "Certifique-se que o Bluetooth do seu celular/computador está ativado",
+                        "Use Chrome ou Edge (outros navegadores não suportam)",
+                        "Clique em 'Conectar Artemis Echo' e selecione o dispositivo na lista",
+                    ].map((passo, i) => (
+                        <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "6px", alignItems: "flex-start" }}>
+                            <div style={{
+                                width: "18px", height: "18px", borderRadius: "50%",
+                                backgroundColor: cores.roxo, color: "white",
+                                fontSize: "10px", fontWeight: "700",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0, marginTop: "1px"
+                            }}>
+                                {i + 1}
+                            </div>
+                            <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda, lineHeight: "1.5" }}>{passo}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Navegação inferior */}
+            <div style={{
+                position: "fixed", bottom: 0, left: 0, right: 0,
+                backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
+                display: "flex", justifyContent: "space-around",
+                padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)"
+            }}>
+                {nav.map((item) => {
+                    const ativo = pathname === item.href
+                    return (
+                        <Link key={item.label} href={item.href} style={{
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: "4px",
+                            textDecoration: "none", color: ativo ? cores.roxo : "#aaa",
+                        }}>
+                            <div style={{ padding: "6px 16px", borderRadius: "12px", backgroundColor: ativo ? `rgba(90,73,151,0.1)` : "transparent" }}>
+                                <item.icon size={20} />
+                            </div>
+                            <span style={{ fontSize: "10px", fontWeight: ativo ? "600" : "400" }}>{item.label}</span>
+                        </Link>
+                    )
+                })}
+            </div>
+
+            <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.05); }
+        }
+      `}</style>
+        </div>
+    )
+}

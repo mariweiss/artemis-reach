@@ -361,7 +361,7 @@ export default function Inicio() {
             {[
               { icon: <Navigation size={18} color={cores.roxo} />, label: "Compartilhar rota", vermelho: false, acao: () => {} },
               { icon: <Phone size={18} color="white" />, label: "Ligar 190", vermelho: true, acao: () => window.open("tel:190") },
-              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo ESP", vermelho: false, acao: () => {} },
+              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo Echo", vermelho: false, acao: () => {} },
               { icon: <Volume2 size={18} color={cores.roxo} />, label: "Sirene sonora", vermelho: false, acao: tocarSirene },
             ].map((item, i) => (
               <button key={i} onClick={item.acao} style={{
