@@ -142,7 +142,6 @@ git commit -m "descrição do que você fez"
 git push origin main
 ```
 
-<<<<<<< HEAD
 =======
 ## 📱 Acessar o site pelo celular (localhost)
 
