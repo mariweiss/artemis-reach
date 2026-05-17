@@ -127,22 +127,6 @@ export default function Inicio() {
         ativo: true,
         criado_em: new Date().toISOString()
       })
-      if (!modoSilencioso && contatos.length > 0) {
-        const mensagem = `ALERTA DE EMERGÊNCIA\n${nomeUsuario} ativou o botão SOS.\nLocalização atual: ${linkMaps}\nPor favor, entre em contato imediatamente.`
-        contatos.forEach((contato) => {
-          const numero = contato.telefone.replace(/\D/g, "")
-
-        // Envia pelo WhatsApp
-          const whatsappLink = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`
-          window.open(whatsappLink, "_blank")
-
-        // Envia também por SMS (como backup)
-          setTimeout(() => {
-            const smsLink = `sms:+55${numero}?body=${encodeURIComponent(mensagem)}`
-            window.open(smsLink, "_blank")
-          }, 1000)
-        })
-      }
     })
     setTimeout(() => setAlertaEnviado(true), 500)
   }
