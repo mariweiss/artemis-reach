@@ -19,7 +19,7 @@ export default function AceitarConvite() {
   const token = searchParams.get("token")
   const [estado, setEstado] = useState("carregando")
   const [convite, setConvite] = useState(null)
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<any>(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
