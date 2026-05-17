@@ -34,7 +34,7 @@ function formatarTempo(isoString: string) {
   return new Date(isoString).toLocaleDateString("pt-BR")
 }
 
-function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }) {
+function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
   const nome = meu ? "Você" : (nomes[alerta.usuario_id] || "Usuária do círculo")
   const origem = alerta.origem === "dispositivo_echo" ? "Artemis Echo" : "App"
   const ativo = alerta.ativo !== false
