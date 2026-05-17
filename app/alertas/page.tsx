@@ -134,9 +134,9 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
 export default function Alertas() {
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState(null)
-  const [alertasRecebidos, setAlertasRecebidos] = useState([])
-  const [meusSOS, setMeusSOS] = useState([])
+  const [usuario, setUsuario] = useState<any>(null)
+  const [alertasRecebidos, setAlertasRecebidos] = useState<any[]>([])
+  const [meusSOS, setMeusSOS] = useState<any[]>([])
   const [aba, setAba] = useState("recebidos")
   const [nomes, setNomes] = useState({})
 
