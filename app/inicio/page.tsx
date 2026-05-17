@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged, User } from "firebase/auth"
-import { doc, getDoc, collection, addDoc, onSnapshot, deleteDoc } from "firebase/firestore"
+import { doc, getDoc, collection, addDoc} from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
-import { MapPin, Users, MessageSquare, Home, Bell, Shield, Phone, Bluetooth, Volume2, Navigation, Plus, X, Trash2 } from "lucide-react"
+import { MapPin, Users, MessageSquare, Home, Bell, Shield, Phone, Bluetooth, Volume2, Navigation, X } from "lucide-react"
 import Link from "next/link"
 import Header from "../componentes/Header"
 
@@ -39,11 +39,6 @@ export default function Inicio() {
   const [modoSilencioso, setModoSilencioso] = useState(false)
   const [pressionando, setPressionando] = useState(false)
   const [progressoHold, setProgressoHold] = useState(0)
-  const [contatos, setContatos] = useState<any[]>([])
-  const [modalContato, setModalContato] = useState(false)
-  const [novoNome, setNovoNome] = useState("")
-  const [novoTelefone, setNovoTelefone] = useState("")
-  const [erroContato, setErroContato] = useState("")
   const holdTimer = useRef<any>(null)
   const progressTimer = useRef<any>(null)
   const contagemTimer = useRef<any>(null)
@@ -66,16 +61,6 @@ export default function Inicio() {
     return () => unsub()
   }, [])
 
-  useEffect(() => {
-    if (!usuario) return
-    const unsub = onSnapshot(
-      collection(db, "usuarios", usuario.uid, "contatos_emergencia"),
-      (snap) => {
-        setContatos(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-      }
-    )
-    return () => unsub()
-  }, [usuario])
 
   useEffect(() => () => {
     clearTimeout(holdTimer.current)
@@ -188,40 +173,6 @@ export default function Inicio() {
     setAlertaEnviado(false)
     setContagem(null)
     setProgressoHold(0)
-  }
-
-  async function adicionarContato() {
-    setErroContato("")
-    if (!novoNome.trim()) { setErroContato("Digite o nome do contato."); return }
-    if (!novoTelefone.trim()) { setErroContato("Digite o número de celular."); return }
-    if (novoTelefone.replace(/\D/g, "").length < 10) {
-      setErroContato("Número inválido. Digite com DDD.")
-      return
-    }
-    if (contatos.length >= 5) {
-      setErroContato("Limite de 5 contatos de emergência.")
-      return
-    }
-    await addDoc(collection(db, "usuarios", usuario!.uid, "contatos_emergencia"), {
-      nome: novoNome.trim(),
-      telefone: novoTelefone.trim(),
-      criado_em: new Date().toISOString()
-    })
-    setNovoNome("")
-    setNovoTelefone("")
-    setModalContato(false)
-  }
-
-  async function removerContato(contatoId) {
-    await deleteDoc(doc(db, "usuarios", usuario!.uid, "contatos_emergencia", contatoId))
-  }
-
-  function formatarTelefone(valor: string) {
-    const nums = valor.replace(/\D/g, "").slice(0, 11)
-    if (nums.length <= 2) return nums
-    if (nums.length <= 7) return `(${nums.slice(0, 2)}) ${nums.slice(2)}`
-    if (nums.length <= 11) return `(${nums.slice(0, 2)}) ${nums.slice(2, 7)}-${nums.slice(7)}`
-    return valor
   }
 
   if (!usuario) return (
@@ -392,171 +343,6 @@ export default function Inicio() {
             <Shield size={16} />
             {modoSilencioso ? "Modo Silencioso ativo" : "Modo Silencioso"}
           </button>
-        </div>
-      )}
-
-      <div style={{ padding: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <div>
-            <h3 style={{ color: cores.roxoEscuro, fontSize: "16px", fontWeight: "700", margin: 0 }}>
-              Contatos de emergência
-            </h3>
-            <p style={{ color: cores.lavanda, fontSize: "12px", margin: "4px 0 0" }}>
-              {contatos.length}/5 contatos cadastrados
-            </p>
-          </div>
-          {contatos.length < 5 && (
-            <button onClick={() => setModalContato(true)} style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              backgroundColor: cores.roxo, color: cores.branco,
-              border: "none", borderRadius: "10px", padding: "8px 14px",
-              cursor: "pointer", fontSize: "13px", fontWeight: "600"
-            }}>
-              <Plus size={16} /> Adicionar
-            </button>
-          )}
-        </div>
-
-        {contatos.length === 0 && (
-          <div style={{
-            backgroundColor: cores.branco, borderRadius: "14px",
-            padding: "24px", textAlign: "center",
-            boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
-          }}>
-            <Phone size={32} color={cores.roxoClaro} style={{ marginBottom: "8px" }} />
-            <p style={{ color: cores.lavanda, fontSize: "14px", margin: 0 }}>
-              Nenhum contato cadastrado ainda.
-            </p>
-            <p style={{ color: "#bbb", fontSize: "12px", marginTop: "4px" }}>
-              Adicione até 5 contatos de emergência.
-            </p>
-          </div>
-        )}
-
-        {contatos.map((contato) => (
-          <div key={contato.id} style={{
-            backgroundColor: cores.branco, borderRadius: "14px",
-            padding: "14px 16px", marginBottom: "8px",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{
-                width: "40px", height: "40px", borderRadius: "50%",
-                backgroundColor: cores.roxoClaro, display: "flex",
-                alignItems: "center", justifyContent: "center",
-                color: cores.roxoEscuro, fontWeight: "700", fontSize: "14px"
-              }}>
-                {contato.nome.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p style={{ color: cores.roxoEscuro, margin: 0, fontSize: "14px", fontWeight: "600" }}>
-                  {contato.nome}
-                </p>
-                <p style={{ color: cores.lavanda, margin: 0, fontSize: "12px" }}>
-                  {contato.telefone}
-                </p>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <a href={`tel:${contato.telefone.replace(/\D/g, "")}`} style={{
-                backgroundColor: cores.fundo, border: "none",
-                borderRadius: "50%", width: "36px", height: "36px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", textDecoration: "none"
-              }}>
-                <Phone size={16} color={cores.roxo} />
-              </a>
-              <button onClick={() => removerContato(contato.id)} style={{
-                backgroundColor: "rgba(239,68,68,0.08)", border: "none",
-                borderRadius: "50%", width: "36px", height: "36px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer"
-              }}>
-                <Trash2 size={16} color="#ef4444" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {modalContato && (
-        <div style={{
-          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)",
-          zIndex: 200, display: "flex", alignItems: "flex-end"
-        }}>
-          <div style={{
-            backgroundColor: cores.branco, width: "100%",
-            borderRadius: "24px 24px 0 0", padding: "24px",
-            boxShadow: "0 -4px 24px rgba(90,73,151,0.15)"
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ color: cores.roxoEscuro, margin: 0, fontSize: "17px" }}>
-                Adicionar contato de emergência
-              </h3>
-              <button onClick={() => { setModalContato(false); setErroContato(""); setNovoNome(""); setNovoTelefone("") }}
-                style={{ background: "none", border: "none", cursor: "pointer" }}>
-                <X size={20} color={cores.lavanda} />
-              </button>
-            </div>
-
-            <label style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro, display: "block", marginBottom: "8px" }}>
-              Nome
-            </label>
-            <input
-              placeholder="Nome do contato"
-              value={novoNome}
-              onChange={(e) => setNovoNome(e.target.value)}
-              style={{
-                width: "100%", padding: "12px 16px",
-                borderRadius: "12px", border: `1.5px solid #E8E0F5`,
-                marginBottom: "16px", fontSize: "14px",
-                boxSizing: "border-box", outline: "none", color: "#333"
-              }}
-            />
-
-            <label style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro, display: "block", marginBottom: "8px" }}>
-              Número de celular
-            </label>
-            <input
-              placeholder="(00) 00000-0000"
-              value={novoTelefone}
-              onChange={(e) => setNovoTelefone(formatarTelefone(e.target.value))}
-              type="tel"
-              style={{
-                width: "100%", padding: "12px 16px",
-                borderRadius: "12px", border: `1.5px solid #E8E0F5`,
-                marginBottom: "16px", fontSize: "14px",
-                boxSizing: "border-box", outline: "none", color: "#333"
-              }}
-            />
-
-            {erroContato && (
-              <p style={{ color: "#ef4444", fontSize: "13px", marginBottom: "12px" }}>
-                {erroContato}
-              </p>
-            )}
-
-            <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                onClick={() => { setModalContato(false); setErroContato(""); setNovoNome(""); setNovoTelefone("") }}
-                style={{
-                  flex: 1, padding: "12px", borderRadius: "12px",
-                  border: `1px solid ${cores.roxoClaro}`, backgroundColor: "transparent",
-                  color: cores.roxo, cursor: "pointer", fontSize: "14px"
-                }}>
-                Cancelar
-              </button>
-              <button onClick={adicionarContato} style={{
-                flex: 2, padding: "12px", borderRadius: "12px",
-                border: "none", backgroundColor: cores.roxo,
-                color: cores.branco, cursor: "pointer",
-                fontSize: "14px", fontWeight: "600"
-              }}>
-                Salvar contato
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
