@@ -48,7 +48,7 @@ export default function Perfil() {
     return () => unsub()
   }, [])
 
-  function formatarTelefone(valor) {
+  function formatarTelefone(valor: string) {
     const nums = valor.replace(/\D/g, "").slice(0, 11)
     if (nums.length <= 2) return nums
     if (nums.length <= 7) return `(${nums.slice(0, 2)}) ${nums.slice(2)}`

@@ -39,7 +39,7 @@ export default function Inicio() {
   const [modoSilencioso, setModoSilencioso] = useState(false)
   const [pressionando, setPressionando] = useState(false)
   const [progressoHold, setProgressoHold] = useState(0)
-  const [contatos, setContatos] = useState([])
+  const [contatos, setContatos] = useState<any[]>([])
   const [modalContato, setModalContato] = useState(false)
   const [novoNome, setNovoNome] = useState("")
   const [novoTelefone, setNovoTelefone] = useState("")
@@ -216,7 +216,7 @@ export default function Inicio() {
     await deleteDoc(doc(db, "usuarios", usuario.uid, "contatos_emergencia", contatoId))
   }
 
-  function formatarTelefone(valor) {
+  function formatarTelefone(valor: string) {
     const nums = valor.replace(/\D/g, "").slice(0, 11)
     if (nums.length <= 2) return nums
     if (nums.length <= 7) return `(${nums.slice(0, 2)}) ${nums.slice(2)}`

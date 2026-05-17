@@ -29,7 +29,7 @@ const nav = [
 ]
 
 export default function Mapa() {
-  const [localizacoes, setLocalizacoes] = useState([])
+  const [localizacoes, setLocalizacoes] = useState<any[]>([])
   const [minhaPos, setMinhaPos] = useState(null)
   const [status, setStatus] = useState("Obtendo localização...")
   const pathname = usePathname()

@@ -41,7 +41,7 @@ const TIPOS = [
 
 const PALAVRAS_PROIBIDAS = ["idiota", "imbecil", "burra", "estúpida", "lixo"]
 
-function filtrarTexto(texto) {
+function filtrarTexto(texto: string) {
   let resultado = texto
   PALAVRAS_PROIBIDAS.forEach(p => {
     resultado = resultado.replace(new RegExp(p, "gi"), "***")
@@ -49,7 +49,7 @@ function filtrarTexto(texto) {
   return resultado
 }
 
-function formatarData(timestamp) {
+function formatarData(timestamp: any) {
   if (!timestamp?.seconds) return "agora"
   const diff = Math.floor((Date.now() - timestamp.seconds * 1000) / 60000)
   if (diff < 1) return "agora"
@@ -59,7 +59,7 @@ function formatarData(timestamp) {
 }
 
 export default function Comunidade() {
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts] = useState<any[]>([])
   const [usuario, setUsuario] = useState(null)
   const [nomeUsuario, setNomeUsuario] = useState("Usuária")
   const [texto, setTexto] = useState("")
@@ -72,7 +72,7 @@ export default function Comunidade() {
   const [carregandoGPS, setCarregandoGPS] = useState(false)
   const [postComentando, setPostComentando] = useState(null)
   const [textoComentario, setTextoComentario] = useState("")
-  const [comentarios, setComentarios] = useState({})
+  const [comentarios, setComentarios] = useState<any>({})
   const [limiteAtingido, setLimiteAtingido] = useState(false)
   const pathname = usePathname()
 

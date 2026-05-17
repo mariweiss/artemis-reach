@@ -17,7 +17,7 @@ const nav = [
   { icon: Bell, label: "Alertas", href: "/alertas" },
 ]
 
-function Toggle({ ativo, onChange }) {
+function Toggle({ ativo, onChange }: any) {
   return (
     <button onClick={onChange} style={{ width: "44px", height: "24px", borderRadius: "12px", backgroundColor: ativo ? cores.amarelo : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", transition: "background-color 0.2s", flexShrink: 0 }}>
       <div style={{ width: "18px", height: "18px", borderRadius: "50%", backgroundColor: "white", position: "absolute", top: "3px", left: ativo ? "23px" : "3px", transition: "left 0.2s" }} />
@@ -25,7 +25,7 @@ function Toggle({ ativo, onChange }) {
   )
 }
 
-function Secao({ icon: Icon, titulo, children }) {
+function Secao({ icon: Icon, titulo, children }: any) {
   return (
     <div style={{ backgroundColor: cores.branco, borderRadius: "16px", marginBottom: "16px", overflow: "hidden", boxShadow: "0 1px 4px rgba(90,73,151,0.06)" }}>
       <div style={{ padding: "14px 20px", borderBottom: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "10px" }}>
@@ -37,7 +37,7 @@ function Secao({ icon: Icon, titulo, children }) {
   )
 }
 
-function ItemToggle({ label, desc, ativo, onChange }) {
+function ItemToggle({ label, desc, ativo, onChange }: any) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: `1px solid ${cores.fundo}` }}>
       <div>
@@ -49,7 +49,7 @@ function ItemToggle({ label, desc, ativo, onChange }) {
   )
 }
 
-function ItemAcao({ label, desc, onClick, icone: Icone }) {
+function ItemAcao({ label, desc, onClick, icone: Icone }: any) {
   return (
     <button onClick={onClick} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "none", border: "none", borderBottom: `1px solid ${cores.fundo}`, cursor: "pointer", textAlign: "left" }}>
       <div>

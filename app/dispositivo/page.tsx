@@ -38,7 +38,7 @@ export default function Dispositivo() {
     const [status, setStatus] = useState("desconectado") // desconectado | buscando | conectado
     const [gpsData, setGpsData] = useState(null)
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
-    const [log, setLog] = useState([])
+    const [log, setLog] = useState<any[]>([])
     const [suportaBLE, setSuportaBLE] = useState(true)
     const deviceRef = useRef(null)
     const cmdCharRef = useRef(null)
@@ -52,7 +52,7 @@ export default function Dispositivo() {
         return () => unsub()
     }, [])
 
-    function adicionarLog(msg, tipo = "info") {
+    function adicionarLog(msg: string, tipo: string = "info") {
         const hora = new Date().toLocaleTimeString("pt-BR")
         setLog(prev => [{ msg, tipo, hora }, ...prev].slice(0, 20))
     }
