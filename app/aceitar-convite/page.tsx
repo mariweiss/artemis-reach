@@ -36,7 +36,7 @@ export default function AceitarConvite() {
       const snap = await getDocs(q)
       if (snap.empty) { setEstado("invalido"); return }
       const data = snap.docs[0]
-      const conviteData = { id: data.id, ...data.data() }
+      const conviteData = { id: data.id, ...data.data() } as any
       if (new Date(conviteData.expira_em) < new Date()) { setEstado("expirado"); return }
       if (conviteData.criador_id === usuario.uid) { setEstado("proprio"); return }
       setConvite(conviteData)
