@@ -25,7 +25,7 @@ const nav = [
   { icon: Bell, label: "Alertas", href: "/alertas" },
 ]
 
-function formatarTempo(isoString? string) {
+function formatarTempo(isoString: string) {
   if (!isoString) return "agora"
   const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
   if (diff < 60) return "agora"
