@@ -18,7 +18,7 @@ export default function AceitarConvite() {
   const router = useRouter()
   const token = searchParams.get("token")
   const [estado, setEstado] = useState("carregando")
-  const [convite, setConvite] = useState(null)
+  const [convite, setConvite] = useState<any>(null)
   const [usuario, setUsuario] = useState<any>(null)
 
   useEffect(() => {
@@ -46,6 +46,7 @@ export default function AceitarConvite() {
   }, [token, usuario])
 
   async function aceitar() {
+    if (!convite || !usuario) return
     await addDoc(collection(db, "circulos"), {
       usuarios: [convite.criador_id, usuario.uid],
       status: "confirmado",
