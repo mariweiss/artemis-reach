@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { auth, db } from "../firebase"
-import { onAuthStateChanged, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth"
+import { onAuthStateChanged, deleteUser, EmailAuthProvider, reauthenticateWithCredential, User } from "firebase/auth"
 import { doc, getDoc, updateDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import { MapPin, Users, MessageSquare, Home, Bell, Camera, Phone, Mail, Edit2, Check, X, Calendar } from "lucide-react"
@@ -21,13 +21,13 @@ const nav = [
 export default function Perfil() {
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<User | null>(null)
   const [dados, setDados] = useState({ nome: "", email: "", telefone: "", endereco: "", nascimento: "", membroDesde: "" })
   const [contatoEmerg, setContatoEmerg] = useState({ nome: "", relacao: "", telefone: "" })
   const [editandoPessoal, setEditandoPessoal] = useState(false)
   const [editandoEmerg, setEditandoEmerg] = useState(false)
-  const [dadosEdit, setDadosEdit] = useState({})
-  const [emergEdit, setEmergEdit] = useState({})
+  const [dadosEdit, setDadosEdit] = useState<any>({})
+  const [emergEdit, setEmergEdit] = useState<any>({})
   const [msg, setMsg] = useState("")
   const [salvando, setSalvando] = useState(false)
 
@@ -58,7 +58,7 @@ export default function Perfil() {
   async function salvarPessoal() {
     setSalvando(true)
     try {
-      await updateDoc(doc(db, "usuarios", usuario.uid), {
+      await updateDoc(doc(db, "usuarios", usuario!.uid), {
         nome: dadosEdit.nome, telefone: dadosEdit.telefone,
         endereco: dadosEdit.endereco, nascimento: dadosEdit.nascimento
       })
@@ -73,7 +73,7 @@ export default function Perfil() {
   async function salvarEmerg() {
     setSalvando(true)
     try {
-      await updateDoc(doc(db, "usuarios", usuario.uid), { contato_emergencia: emergEdit })
+      await updateDoc(doc(db, "usuarios", usuario!.uid), { contato_emergencia: emergEdit })
       setContatoEmerg(emergEdit)
       setEditandoEmerg(false)
       setMsg("Salvo com sucesso!")

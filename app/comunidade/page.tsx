@@ -14,6 +14,7 @@ import {
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { onAuthStateChanged } from "firebase/auth"
+import type { User as FirebaseUser } from "firebase/auth"
 import Header from "../componentes/Header"
 
 const cores = {
@@ -60,7 +61,7 @@ function formatarData(timestamp: any) {
 
 export default function Comunidade() {
   const [posts, setPosts] = useState<any[]>([])
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<FirebaseUser | null>(null)
   const [nomeUsuario, setNomeUsuario] = useState("Usuária")
   const [texto, setTexto] = useState("")
   const [tipo, setTipo] = useState("relato")
@@ -101,8 +102,8 @@ export default function Comunidade() {
     const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
     const unsub = onSnapshot(q, (snapshot) => {
       const dados = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(p => p.criado_em && (p.denuncias || 0) < 5)
+        .map(doc => ({ id: doc.id, ...doc.data() } as any))
+        .filter((p: any) => p.criado_em && (p.denuncias || 0) < 5)
       setPosts(dados)
     })
     return () => unsub()
@@ -259,7 +260,7 @@ export default function Comunidade() {
               {ord === "recentes" ? "Mais recentes" : "Mais relevantes"}
             </button>
           ))}
-          {[{ valor: "todos", label: "Todos" }, ...TIPOS].map(t => (
+          {([{ valor: "todos", label: "Todos", cor: undefined, fundo: undefined }, ...TIPOS]).map(t => (
             <button key={t.valor} onClick={() => setFiltroTipo(t.valor)} style={{
               padding: "6px 14px", borderRadius: "20px", fontSize: "12px",
               border: `1.5px solid ${filtroTipo === t.valor ? (t.cor || cores.roxo) : "rgba(90,73,151,0.2)"}`,

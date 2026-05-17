@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { auth, db } from "../firebase"
-import { onAuthStateChanged } from "firebase/auth"
+import { onAuthStateChanged, User } from "firebase/auth"
 import { doc, getDoc, collection, addDoc, onSnapshot, deleteDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import { MapPin, Users, MessageSquare, Home, Bell, Shield, Phone, Bluetooth, Volume2, Navigation, Plus, X, Trash2 } from "lucide-react"
@@ -31,10 +31,10 @@ const nav = [
 export default function Inicio() {
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<User | null>(null)
   const [nomeUsuario, setNomeUsuario] = useState("")
   const [sosAtivo, setSosAtivo] = useState(false)
-  const [contagem, setContagem] = useState(null)
+  const [contagem, setContagem] = useState<number | null>(null)
   const [alertaEnviado, setAlertaEnviado] = useState(false)
   const [modoSilencioso, setModoSilencioso] = useState(false)
   const [pressionando, setPressionando] = useState(false)
@@ -44,9 +44,9 @@ export default function Inicio() {
   const [novoNome, setNovoNome] = useState("")
   const [novoTelefone, setNovoTelefone] = useState("")
   const [erroContato, setErroContato] = useState("")
-  const holdTimer = useRef(null)
-  const progressTimer = useRef(null)
-  const contagemTimer = useRef(null)
+  const holdTimer = useRef<any>(null)
+  const progressTimer = useRef<any>(null)
+  const contagemTimer = useRef<any>(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -202,7 +202,7 @@ export default function Inicio() {
       setErroContato("Limite de 5 contatos de emergência.")
       return
     }
-    await addDoc(collection(db, "usuarios", usuario.uid, "contatos_emergencia"), {
+    await addDoc(collection(db, "usuarios", usuario!.uid, "contatos_emergencia"), {
       nome: novoNome.trim(),
       telefone: novoTelefone.trim(),
       criado_em: new Date().toISOString()
@@ -213,7 +213,7 @@ export default function Inicio() {
   }
 
   async function removerContato(contatoId) {
-    await deleteDoc(doc(db, "usuarios", usuario.uid, "contatos_emergencia", contatoId))
+    await deleteDoc(doc(db, "usuarios", usuario!.uid, "contatos_emergencia", contatoId))
   }
 
   function formatarTelefone(valor: string) {

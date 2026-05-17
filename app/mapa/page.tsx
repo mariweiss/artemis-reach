@@ -30,7 +30,7 @@ const nav = [
 
 export default function Mapa() {
   const [localizacoes, setLocalizacoes] = useState<any[]>([])
-  const [minhaPos, setMinhaPos] = useState(null)
+  const [minhaPos, setMinhaPos] = useState<{ lat: number; lng: number } | null>(null)
   const [status, setStatus] = useState("Obtendo localização...")
   const pathname = usePathname()
 
@@ -84,7 +84,7 @@ export default function Mapa() {
       </div>
 
       {/* Mapa */}
-      <APIProvider apiKey={CHAVE}>
+      <APIProvider apiKey={CHAVE ?? ""}>
         <Map
           style={{ width: "100%", height: "calc(100vh - 170px)" }}
           center={minhaPos || { lat: -22.9068, lng: -43.1729 }}

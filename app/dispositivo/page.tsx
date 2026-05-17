@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { auth, db } from "../firebase"
-import { onAuthStateChanged } from "firebase/auth"
+import { onAuthStateChanged, User } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
@@ -34,17 +34,17 @@ const CHAR_SOS_UUID = "00005678-0000-1000-8000-00805f9b34fb"
 export default function Dispositivo() {
     const pathname = usePathname()
     const router = useRouter()
-    const [usuario, setUsuario] = useState(null)
+    const [usuario, setUsuario] = useState<User | null>(null)
     const [status, setStatus] = useState("desconectado") // desconectado | buscando | conectado
-    const [gpsData, setGpsData] = useState(null)
-    const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null)
+    const [gpsData, setGpsData] = useState<any>(null)
+    const [ultimaAtualizacao, setUltimaAtualizacao] = useState<any>(null)
     const [log, setLog] = useState<any[]>([])
     const [suportaBLE, setSuportaBLE] = useState(true)
-    const deviceRef = useRef(null)
-    const cmdCharRef = useRef(null)
+    const deviceRef = useRef<any>(null)
+    const cmdCharRef = useRef<any>(null)
 
     useEffect(() => {
-        if (!navigator.bluetooth) setSuportaBLE(false)
+        if (!(navigator as any).bluetooth) setSuportaBLE(false)
         const unsub = onAuthStateChanged(auth, (user) => {
             if (!user) { router.push("/"); return }
             setUsuario(user)
@@ -58,7 +58,7 @@ export default function Dispositivo() {
     }
 
     async function conectar() {
-        if (!navigator.bluetooth) {
+        if (!(navigator as any).bluetooth) {
             adicionarLog("Bluetooth não suportado. Use Chrome ou Edge.", "erro")
             return
         }
@@ -66,7 +66,7 @@ export default function Dispositivo() {
             setStatus("buscando")
             adicionarLog("Buscando SOS_DEVICE...")
 
-            const device = await navigator.bluetooth.requestDevice({
+            const device = await (navigator as any).bluetooth.requestDevice({
                 filters: [{ name: "SOS_DEVICE" }],
                 optionalServices: ["00001234-0000-1000-8000-00805f9b34fb"]
             })
@@ -130,10 +130,10 @@ export default function Dispositivo() {
 
         } catch (err) {
             setStatus("desconectado")
-            if (err.name === "NotFoundError") {
+            if ((err as any).name === "NotFoundError") {
                 adicionarLog("Nenhum dispositivo selecionado.", "aviso")
             } else {
-                adicionarLog("Erro: " + err.message, "erro")
+                adicionarLog("Erro: " + (err as any).message, "erro")
             }
         }
     }
@@ -158,7 +158,7 @@ export default function Dispositivo() {
             await cmdCharRef.current.writeValue(encoder.encode(cmd))
             adicionarLog(`Comando enviado: ${cmd}`, "sucesso")
         } catch (err) {
-            adicionarLog(`Erro ao enviar comando: ${err.message}`, "erro")
+            adicionarLog(`Erro ao enviar comando: ${(err as any).message}`, "erro")
         }
     }
 

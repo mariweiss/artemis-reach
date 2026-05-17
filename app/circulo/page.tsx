@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { auth, db } from "../firebase"
-import { onAuthStateChanged } from "firebase/auth"
+import { onAuthStateChanged, User } from "firebase/auth"
 import {
   collection, addDoc, onSnapshot, doc, getDoc,
   updateDoc, deleteDoc, query, where, orderBy
@@ -37,13 +37,13 @@ const nav = [
 export default function Circulo() {
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<User | null>(null)
   const [nomeUsuario, setNomeUsuario] = useState("")
   const [conexoes, setConexoes] = useState<any[]>([])
   const [convitesPendentes, setConvitesPendentes] = useState<any[]>([])
   const [linkGerado, setLinkGerado] = useState("")
   const [modalLink, setModalLink] = useState(false)
-  const [modalPerfil, setModalPerfil] = useState(null)
+  const [modalPerfil, setModalPerfil] = useState<any>(null)
   const [compartilharLocalizacao, setCompartilharLocalizacao] = useState(true)
   const [copiado, setCopiado] = useState(false)
   const [carregando, setCarregando] = useState(true)
@@ -140,9 +140,9 @@ export default function Circulo() {
 
   async function aceitarConvite(convite) {
     await addDoc(collection(db, "circulos"), {
-      usuarios: [convite.criador_id, usuario.uid],
+      usuarios: [convite.criador_id, usuario!.uid],
       status: "confirmado",
-      compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
+      compartilha: { [convite.criador_id]: false, [usuario!.uid]: false },
       criado_em: new Date().toISOString()
     })
     await updateDoc(doc(db, "convites", convite.id), { status: "aceito" })
@@ -159,7 +159,7 @@ export default function Circulo() {
   async function toggleCompartilharLocalizacao(conexao) {
     const novoValor = !conexao.compartilhaLocalizacao
     await updateDoc(doc(db, "circulos", conexao.id), {
-      [`compartilha.${usuario.uid}`]: novoValor
+      [`compartilha.${usuario!.uid}`]: novoValor
     })
   }
 

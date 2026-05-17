@@ -146,15 +146,15 @@ export default function Home() {
       await signInWithEmailAndPassword(auth, email, senha)
       setTela("modo")
     } catch (e) {
-      console.log("Erro completo:", e.code, e.message)
-      if (e.code === "auth/email-already-in-use") {
+      console.log("Erro completo:", (e as any).code, (e as any).message)
+      if ((e as any).code === "auth/email-already-in-use") {
         setErro("Este email já está cadastrado. Tente fazer login.")
-      } else if (e.code === "auth/weak-password") {
+      } else if ((e as any).code === "auth/weak-password") {
         setErro("Senha muito fraca. Use pelo menos 6 caracteres.")
-      } else if (e.code === "auth/invalid-email") {
+      } else if ((e as any).code === "auth/invalid-email") {
         setErro("Email inválido.")
       } else {
-        setErro(`Erro: ${e.code}`)
+        setErro(`Erro: ${(e as any).code}`)
       }
     }
     setCarregando(false)
@@ -346,7 +346,7 @@ export default function Home() {
   )
 }
 
-function Campo({ label, placeholder, value, onChange, tipo, extra }) {
+function Campo({ label, placeholder, value, onChange, tipo, extra = null }: { label: any, placeholder: any, value: any, onChange: any, tipo: any, extra?: any }) {
   return (
     <div style={{ marginBottom: "20px" }}>
       <label style={{ fontSize: "13px", fontWeight: "600", color: "#2F195F", display: "block", marginBottom: "8px" }}>

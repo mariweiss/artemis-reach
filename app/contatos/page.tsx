@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { auth, db } from "../firebase"
-import { onAuthStateChanged } from "firebase/auth"
+import { onAuthStateChanged, User } from "firebase/auth"
 import { collection, onSnapshot, query, where } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import { MapPin, Users, MessageSquare, Home, Bell, Search, Phone, Mail, MoreVertical, UserCheck } from "lucide-react"
 import Link from "next/link"
 import Header from "../componentes/Header"
 
-const cores = { fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F", roxoClaro: "#BB99FF", lavanda: "#8575BD", branco: "#FFFFFF" }
+const cores = { fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F", roxoClaro: "#BB99FF", lavanda: "#8575BD", branco: "#FFFFFF", amarelo: "#FDEA72" }
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -21,10 +21,10 @@ const nav = [
 export default function Contatos() {
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<User | null>(null)
   const [busca, setBusca] = useState("")
-  const [conexoes, setConexoes] = useState([])
-  const [idsCirculo, setIdsCirculo] = useState([])
+  const [conexoes, setConexoes] = useState<any[]>([])
+  const [idsCirculo, setIdsCirculo] = useState<string[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -39,7 +39,7 @@ export default function Contatos() {
     const q = query(collection(db, "circulos"), where("usuarios", "array-contains", usuario.uid), where("status", "==", "confirmado"))
     const unsub = onSnapshot(q, async (snap) => {
       const { getDoc, doc } = await import("firebase/firestore")
-      const ids = []
+      const ids: string[] = []
       const dados = await Promise.all(snap.docs.map(async (d) => {
         const data = d.data()
         const outroId = data.usuarios.find(id => id !== usuario.uid)

@@ -49,7 +49,7 @@ function Item({ label, desc, ativo, onChange }: any) {
 
 function ItemAcao({ label, desc, onClick }: any) {
   return (
-    <button onClick={onClick} style={{ width: "100%", display: "flex", flexDirection: "column", padding: "14px 20px", borderBottom: `1px solid ${cores.fundo}`, background: "none", border: "none", borderBottom: `1px solid ${cores.fundo}`, cursor: "pointer", textAlign: "left" }}>
+    <button onClick={onClick} style={{ width: "100%", display: "flex", flexDirection: "column", padding: "14px 20px", background: "none", border: "none", borderBottom: `1px solid ${cores.fundo}`, cursor: "pointer", textAlign: "left" }}>
       <p style={{ margin: 0, fontSize: "14px", color: cores.roxoEscuro }}>{label}</p>
       {desc && <p style={{ margin: "2px 0 0", fontSize: "12px", color: cores.lavanda }}>{desc}</p>}
     </button>

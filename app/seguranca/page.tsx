@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { auth } from "../firebase"
-import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut } from "firebase/auth"
+import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut, User } from "firebase/auth"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { MapPin, Users, MessageSquare, Home, Bell, Shield, Fingerprint, Key, AlertCircle, Monitor, Smartphone, Eye, EyeOff, Check, ChevronRight } from "lucide-react"
@@ -42,7 +42,7 @@ function Secao({ icon: Icon, titulo, children, corFundo }: any) {
 export default function Seguranca() {
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState(null)
+  const [usuario, setUsuario] = useState<User | null>(null)
   const [configs, setConfigs] = useState({ doisFatores: true, biometrico: true, sosAtivo: true, alertaAuto: false })
   const [modalSenha, setModalSenha] = useState(false)
   const [senhaAtual, setSenhaAtual] = useState("")
@@ -62,10 +62,11 @@ export default function Seguranca() {
   function toggle(key) { setConfigs(prev => ({ ...prev, [key]: !prev[key] })) }
 
   async function alterarSenha() {
+    if (!usuario) return
     if (novaSenha.length < 6) { setMsg("Senha deve ter pelo menos 6 caracteres."); return }
     setSalvando(true)
     try {
-      const cred = EmailAuthProvider.credential(usuario.email, senhaAtual)
+      const cred = EmailAuthProvider.credential(usuario.email ?? "", senhaAtual)
       await reauthenticateWithCredential(usuario, cred)
       await updatePassword(usuario, novaSenha)
       setMsg("Senha alterada!")
