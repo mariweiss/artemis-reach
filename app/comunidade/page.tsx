@@ -541,7 +541,7 @@ export default function Comunidade() {
       )}
 
       {/* Botão nova publicação */}
-      <div style={{ position: "fixed", bottom: "70px", left: 0, right: 0, padding: "0 16px" }}>
+      <div style={{ position: "fixed", bottom: "80px", left: 0, right: 0, padding: "0 16px" }}>
         <button onClick={() => setModalAberto(true)} style={{
           width: "100%", padding: "16px",
           backgroundColor: cores.roxo, color: cores.branco,
