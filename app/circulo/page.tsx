@@ -415,20 +415,23 @@ export default function Circulo() {
       </div>
 
       {/* Botões fixos */}
-      <div style={{ position: "fixed", bottom: "60px", left: 0, right: 0, display: "flex" }}>
+      <div style={{ position: "fixed", bottom: "70px", left: 0, right: 0, padding: "0 16px", display: "flex", gap: "10px" }}>
         <button onClick={() => setModalNovoGrupo(true)} style={{
-          flex: 1, padding: "16px", backgroundColor: cores.branco,
-          color: cores.roxo, border: "none", borderTop: `1px solid ${cores.fundo}`,
-          fontSize: "14px", fontWeight: "600",
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+          flex: 1, padding: "14px",
+          backgroundColor: cores.branco, color: cores.roxo,
+          border: `1.5px solid ${cores.roxo}`, borderRadius: "14px",
+          fontSize: "14px", fontWeight: "600", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
         }}>
           <Plus size={18} /> Novo grupo
         </button>
         <button onClick={gerarLinkIndividual} style={{
-          flex: 1, padding: "16px", backgroundColor: cores.roxo,
-          color: cores.branco, border: "none",
-          fontSize: "14px", fontWeight: "600",
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+          flex: 1, padding: "14px",
+          backgroundColor: cores.roxo, color: cores.branco,
+          border: "none", borderRadius: "14px",
+          fontSize: "14px", fontWeight: "600", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+          boxShadow: "0 4px 16px rgba(90,73,151,0.3)"
         }}>
           <LinkIcon size={18} /> Convidar
         </button>
