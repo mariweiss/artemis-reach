@@ -59,7 +59,7 @@ export default function Circulo() {
       try {
         const snap = await getDoc(doc(db, "usuarios", user.uid))
         if (snap.exists()) setNomeUsuario(snap.data().nome?.split(" ")[0] || "Usuária")
-      } catch {}
+      } catch { }
       setCarregando(false)
     })
     return () => unsub()
@@ -415,21 +415,20 @@ export default function Circulo() {
       </div>
 
       {/* Botões fixos */}
-      <div style={{ position: "fixed", bottom: "70px", left: 0, right: 0, padding: "0 24px", display: "flex", gap: "10px" }}>
+      <div style={{ position: "fixed", bottom: "60px", left: 0, right: 0, display: "flex" }}>
         <button onClick={() => setModalNovoGrupo(true)} style={{
-          flex: 1, padding: "14px", backgroundColor: cores.branco,
-          color: cores.roxo, border: `1.5px solid ${cores.roxo}`,
-          borderRadius: "14px", fontSize: "14px", fontWeight: "600",
+          flex: 1, padding: "16px", backgroundColor: cores.branco,
+          color: cores.roxo, border: "none", borderTop: `1px solid ${cores.fundo}`,
+          fontSize: "14px", fontWeight: "600",
           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
         }}>
           <Plus size={18} /> Novo grupo
         </button>
         <button onClick={gerarLinkIndividual} style={{
-          flex: 1, padding: "14px", backgroundColor: cores.roxo,
+          flex: 1, padding: "16px", backgroundColor: cores.roxo,
           color: cores.branco, border: "none",
-          borderRadius: "14px", fontSize: "14px", fontWeight: "600",
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-          boxShadow: "0 4px 16px rgba(90,73,151,0.3)"
+          fontSize: "14px", fontWeight: "600",
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
         }}>
           <LinkIcon size={18} /> Convidar
         </button>
