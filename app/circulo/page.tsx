@@ -415,7 +415,7 @@ export default function Circulo() {
       </div>
 
       {/* Botões fixos */}
-      <div style={{ position: "fixed", bottom: "70px", left: 0, right: 0, padding: "0 16px", display: "flex", gap: "10px" }}>
+      <div style={{ position: "fixed", bottom: "90px", left: 0, right: 0, padding: "0 16px", display: "flex", gap: "10px" }}>
         <button onClick={() => setModalNovoGrupo(true)} style={{
           flex: 1, padding: "14px",
           backgroundColor: cores.branco, color: cores.roxo,
