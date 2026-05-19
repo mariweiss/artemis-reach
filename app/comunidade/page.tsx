@@ -540,6 +540,18 @@ export default function Comunidade() {
         </div>
       )}
 
+      {/* Botão SOS */}
+      <button onClick={() => window.location.href = "/inicio"} style={{
+        width: "52px", height: "52px", borderRadius: "14px",
+        backgroundColor: "#ef4444", color: "white",
+        border: "none", cursor: "pointer", flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "0 4px 16px rgba(239,68,68,0.4)",
+        fontWeight: "800", fontSize: "13px", letterSpacing: "1px"
+      }}>
+        SOS
+      </button>
+
       {/* Botão nova publicação */}
       <div style={{ position: "fixed", bottom: "80px", left: 0, right: 0, padding: "0 16px" }}>
         <button onClick={() => setModalAberto(true)} style={{
