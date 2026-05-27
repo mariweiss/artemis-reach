@@ -34,13 +34,15 @@ export default function Dispositivo() {
   const router = useRouter()
   const [usuario, setUsuario] = useState<any>(null)
   const [status, setStatus] = useState("desconectado")
+  const [gpsData, setGpsData] = useState<any>(null)
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<any>(null)
   const [log, setLog] = useState<any[]>([])
   const [suportaBLE, setSuportaBLE] = useState(true)
   const deviceRef = useRef<any>(null)
   const cmdCharRef = useRef<any>(null)
 
   useEffect(() => {
-    if (!(navigator as any).bluetooth) setSuportaBLE(false)
+    if (!navigator.bluetooth) setSuportaBLE(false)
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) { router.push("/"); return }
       setUsuario(user)
@@ -54,7 +56,7 @@ export default function Dispositivo() {
   }
 
   async function conectar() {
-    if (!(navigator as any).bluetooth) {
+    if (!navigator.bluetooth) {
       adicionarLog("Bluetooth não suportado. Use Chrome ou Edge.", "erro")
       return
     }
@@ -62,7 +64,7 @@ export default function Dispositivo() {
       setStatus("buscando")
       adicionarLog("Buscando SOS_DEVICE...")
 
-      const device = await (navigator as any).bluetooth.requestDevice({
+      const device = await navigator.bluetooth.requestDevice({
         filters: [{ name: "SOS_DEVICE" }],
         optionalServices: [SERVICE_UUID]
       })
@@ -82,26 +84,14 @@ export default function Dispositivo() {
       adicionarLog("Serviço encontrado!")
 
       const sosChar = await service.getCharacteristic(CHAR_SOS_UUID)
-      adicionarLog("Característica encontrada, iniciando notificações...", "info")
-
-      try {
-        await sosChar.startNotifications()
-        adicionarLog("Notificações ativas — aguardando SOS...", "sucesso")
-      } catch (err: any) {
-        adicionarLog("Erro ao iniciar notificações: " + err.message, "erro")
-        try {
-          const valor = await sosChar.readValue()
-          const decoder = new TextDecoder()
-          adicionarLog("Valor atual: " + decoder.decode(valor), "info")
-        } catch (e: any) {
-          adicionarLog("Erro ao ler valor: " + e.message, "erro")
-        }
-      }
+      await sosChar.startNotifications()
+      adicionarLog("Notificações ativas — aguardando SOS...", "sucesso")
 
       sosChar.addEventListener("characteristicvaluechanged", async (event: any) => {
         const decoder = new TextDecoder()
         const value = decoder.decode(event.target.value)
 
+        // Log de tudo que chega
         adicionarLog("Valor recebido: " + value, "info")
 
         if (value === "SOS_ATIVADO" || value.includes("SOS") || value.length > 3) {
@@ -111,6 +101,7 @@ export default function Dispositivo() {
             async (pos) => {
               const { latitude, longitude } = pos.coords
               adicionarLog("GPS: " + latitude.toFixed(4) + ", " + longitude.toFixed(4), "sucesso")
+
               try {
                 const { addDoc, collection } = await import("firebase/firestore")
                 await addDoc(collection(db, "alertas_sos"), {
@@ -164,6 +155,7 @@ export default function Dispositivo() {
       deviceRef.current.gatt.disconnect()
     }
     setStatus("desconectado")
+    setGpsData(null)
     cmdCharRef.current = null
     adicionarLog("Desconectado manualmente.")
   }
@@ -202,6 +194,7 @@ export default function Dispositivo() {
           Conecte seu dispositivo Artemis Echo via Bluetooth
         </p>
 
+        {/* Aviso navegador incompatível */}
         {!suportaBLE && (
           <div style={{
             backgroundColor: "rgba(239,68,68,0.1)", borderRadius: "14px",
@@ -216,7 +209,7 @@ export default function Dispositivo() {
           </div>
         )}
 
-        {/* Card status */}
+        {/* Card de status */}
         <div style={{
           backgroundColor: cores.branco, borderRadius: "20px",
           padding: "24px", marginBottom: "16px",
@@ -304,7 +297,7 @@ export default function Dispositivo() {
           </div>
         )}
 
-        {/* Log */}
+        {/* Log de eventos */}
         {log.length > 0 && (
           <div>
             <p style={{ fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
