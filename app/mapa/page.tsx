@@ -21,7 +21,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Header from "../componentes/Header"
 
-const CHAVE = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+const CHAVE: string = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ""
 
 if (!CHAVE) {
   throw new Error("Google Maps API Key não encontrada")
