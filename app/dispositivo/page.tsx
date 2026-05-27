@@ -84,8 +84,22 @@ export default function Dispositivo() {
       adicionarLog("Serviço encontrado!")
 
       const sosChar = await service.getCharacteristic(CHAR_SOS_UUID)
-      await sosChar.startNotifications()
-      adicionarLog("Notificações ativas — aguardando SOS...", "sucesso")
+      adicionarLog("Característica encontrada, iniciando notificações...", "info")
+
+      try {
+        await sosChar.startNotifications()
+        adicionarLog("Notificações ativas — aguardando SOS...", "sucesso")
+      } catch (err: any) {
+        adicionarLog("Erro ao iniciar notificações: " + err.message, "erro")
+        // Tenta ler o valor atual mesmo assim
+        try {
+          const valor = await sosChar.readValue()
+          const decoder = new TextDecoder()
+          adicionarLog("Valor atual: " + decoder.decode(valor), "info")
+        } catch (e: any) {
+          adicionarLog("Erro ao ler valor: " + e.message, "erro")
+        }
+      }
 
       sosChar.addEventListener("characteristicvaluechanged", async (event: any) => {
         const decoder = new TextDecoder()
