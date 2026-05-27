@@ -42,7 +42,7 @@ export default function Dispositivo() {
   const cmdCharRef = useRef<any>(null)
 
   useEffect(() => {
-    if (!navigator.bluetooth) setSuportaBLE(false)
+    if (!(navigator as any).bluetooth) setSuportaBLE(false)
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) { router.push("/"); return }
       setUsuario(user)
