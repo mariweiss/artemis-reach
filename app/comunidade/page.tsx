@@ -245,13 +245,17 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   const [ordenacao, setOrdenacao] = useState("recentes")
   const [filtroTipo, setFiltroTipo] = useState("todos")
 
-  useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
-    const unsub = onSnapshot(q, (snap) => {
-      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)).filter((p: any) => p.criado_em && (p.denuncias || 0) < 5))
-    })
-    return () => unsub()
-  }, [])
+useEffect(() => {
+  const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
+  const unsub = onSnapshot(q, (snap) => {
+    const dados = snap.docs.map(d => {
+      const data = d.data() as any
+      return { id: d.id, ...data }
+    }).filter((p: any) => p.criado_em && (p.denuncias || 0) < 5)
+    setPosts(dados)
+  })
+  return () => unsub()
+}, [])
 
   async function obterGPS() {
     setCarregandoGPS(true)
