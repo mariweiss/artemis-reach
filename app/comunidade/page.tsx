@@ -5,7 +5,7 @@ import { db, auth } from "../firebase"
 import {
   collection, addDoc, onSnapshot, orderBy, query,
   serverTimestamp, doc, updateDoc, increment,
-  arrayUnion, arrayRemove, getDoc, where, getDocs
+  arrayUnion, arrayRemove, getDoc, where
 } from "firebase/firestore"
 import {
   MapPin, Users, MessageSquare, Home, Bell,
