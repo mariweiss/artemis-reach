@@ -11,7 +11,7 @@ import {
   Volume2, Shield, AlertCircle,
   CheckCircle, XCircle
 } from "lucide-react"
-import Header from "../components/Header"
+import Header from "../componentes/Header"
 
 const cores = {
   fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F",
