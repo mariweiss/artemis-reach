@@ -10,7 +10,7 @@ import {
 import {
   MapPin, Users, MessageSquare, Home, Bell,
   Lock, User, Heart, ThumbsUp, Flag, X,
-  Send, Paperclip, Image, ChevronRight
+  Send, Paperclip, Image, Star, ChevronRight
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
