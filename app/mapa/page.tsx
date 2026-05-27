@@ -48,10 +48,7 @@ export default function Mapa() {
 
   useEffect(() => {
     if (!usuarioId) return
-    const q = query(
-      collection(db, "grupos"),
-      where("membros", "array-contains", usuarioId)
-    )
+    const q = query(collection(db, "grupos"), where("membros", "array-contains", usuarioId))
     const unsub = onSnapshot(q, (snap) => {
       const dados = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       setGrupos(dados)
