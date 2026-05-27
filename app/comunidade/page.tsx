@@ -472,10 +472,7 @@ useEffect(() => {
       )}
 
       {/* Botão nova publicação */}
-      <div style={{ position: "fixed", bottom: "70px", left: 0, right: 0, padding: "0 16px", display: "flex", gap: "10px" }}>
-        <button onClick={() => window.location.href = "/inicio"} style={{ width: "52px", height: "52px", borderRadius: "14px", backgroundColor: "#ef4444", color: "white", border: "none", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(239,68,68,0.4)", fontWeight: "800", fontSize: "13px" }}>
-          SOS
-        </button>
+      <div style={{ position: "fixed", bottom: "80px", left: 0, right: 0, padding: "0 16px", display: "flex", gap: "10px" }}>
         <button onClick={() => setModalAberto(true)} style={{ flex: 1, padding: "16px", backgroundColor: cores.roxo, color: cores.branco, border: "none", borderRadius: "14px", fontSize: "15px", fontWeight: "bold", cursor: "pointer", boxShadow: "0 4px 16px rgba(90,73,151,0.3)" }}>
           + Nova Publicação
         </button>
