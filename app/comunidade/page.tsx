@@ -248,7 +248,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
     const unsub = onSnapshot(q, (snap) => {
-      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.criado_em && (p.denuncias || 0) < 5))
+      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)).filter((p: any) => p.criado_em && (p.denuncias || 0) < 5))
     })
     return () => unsub()
   }, [])
