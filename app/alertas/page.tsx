@@ -107,62 +107,54 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
         <div style={{ marginBottom: "10px" }}>
           <div style={{ borderRadius: "12px", overflow: "hidden", position: "relative", marginBottom: "8px" }}>
             <MiniMapa lat={alerta.latitude} lng={alerta.longitude} />
-            
-              href={linkMapa!}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                position: "absolute", bottom: "8px", right: "8px", zIndex: 10,
-                backgroundColor: cores.roxo, color: "white",
-                padding: "6px 12px", borderRadius: "20px",
-                fontSize: "11px", fontWeight: "700",
-                display: "flex", alignItems: "center", gap: "6px",
-                textDecoration: "none",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
-              }}
-            >
+            <a href={linkMapa!} target="_blank" rel="noopener noreferrer" style={{ position: "absolute", bottom: "8px", right: "8px", zIndex: 10, backgroundColor: cores.roxo, color: "white", padding: "6px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
               <Navigation size={12} color="white" />
               Abrir no mapa
             </a>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Sem localização */}
-      {!temLocalizacao && (
-        <div style={{
-          backgroundColor: cores.fundo, borderRadius: "10px",
-          padding: "10px 12px", marginBottom: "10px",
-          display: "flex", alignItems: "center", gap: "8px"
-        }}>
-          <Navigation size={14} color={cores.lavanda} />
-          <span style={{ fontSize: "12px", color: cores.lavanda }}>Localização não disponível</span>
-        </div>
-      )}
+      {
+        !temLocalizacao && (
+          <div style={{
+            backgroundColor: cores.fundo, borderRadius: "10px",
+            padding: "10px 12px", marginBottom: "10px",
+            display: "flex", alignItems: "center", gap: "8px"
+          }}>
+            <Navigation size={14} color={cores.lavanda} />
+            <span style={{ fontSize: "12px", color: cores.lavanda }}>Localização não disponível</span>
+          </div>
+        )
+      }
 
       {/* Ações */}
-      {ativo && (
-        <div style={{ display: "flex", gap: "8px" }}>
-          <a href="tel:190" style={{
-            flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px",
-            backgroundColor: "rgba(239,68,68,0.1)", color: "#dc2626",
-            border: "1px solid rgba(239,68,68,0.2)", textDecoration: "none",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "6px", fontWeight: "600"
-          }}>
-            Ligar 190
-          </a>
-          <button onClick={() => resolverAlerta(alerta.id)} style={{
-            flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px",
-            backgroundColor: "rgba(34,197,94,0.1)", color: "#16a34a",
-            border: "1px solid rgba(34,197,94,0.2)", cursor: "pointer",
-            fontWeight: "600"
-          }}>
-            Marcar resolvido
-          </button>
-        </div>
-      )}
-    </div>
+      {
+        ativo && (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <a href="tel:190" style={{
+              flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px",
+              backgroundColor: "rgba(239,68,68,0.1)", color: "#dc2626",
+              border: "1px solid rgba(239,68,68,0.2)", textDecoration: "none",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: "6px", fontWeight: "600"
+            }}>
+              Ligar 190
+            </a>
+            <button onClick={() => resolverAlerta(alerta.id)} style={{
+              flex: 1, padding: "10px", borderRadius: "10px", fontSize: "13px",
+              backgroundColor: "rgba(34,197,94,0.1)", color: "#16a34a",
+              border: "1px solid rgba(34,197,94,0.2)", cursor: "pointer",
+              fontWeight: "600"
+            }}>
+              Marcar resolvido
+            </button>
+          </div>
+        )
+      }
+    </div >
   )
 }
 
@@ -213,9 +205,9 @@ export default function Alertas() {
       })
       snapGrupos.docs.forEach((d: any) => {
         const data = d.data()
-        ;(data.membros || [])
-          .filter((id: string) => id !== usuario.uid)
-          .forEach((id: string) => idsSet.add(id))
+          ; (data.membros || [])
+            .filter((id: string) => id !== usuario.uid)
+            .forEach((id: string) => idsSet.add(id))
       })
 
       const idsCirculo = [...idsSet]
