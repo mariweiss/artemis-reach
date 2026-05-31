@@ -176,7 +176,10 @@ export default function Mapa() {
 
       {/* Botão centralizar */}
       <div style={{ position: "fixed", bottom: "90px", left: "24px", zIndex: 1000 }}>
-        <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }} style={{ ...}}>
+        <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }} 
+        style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.branco, 
+        border: "none", display: "flex", alignItems: "center", justifyContent: "center", 
+        cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
           <Navigation size={20} color={cores.roxo} />
         </button>
       </div>
