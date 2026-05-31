@@ -10,6 +10,9 @@ import {
   MapPin, Users, MessageSquare, Home, Bell,
   AlertCircle, Shield, Smartphone, CheckCircle, Navigation
 } from "lucide-react"
+import dynamic from "next/dynamic"
+
+const MiniMapa = dynamic(() => import("./MiniMapaAlerta"), { ssr: false })
 import Header from "../componentes/Header"
 
 const cores = {
