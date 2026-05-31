@@ -66,15 +66,15 @@ function criarIconeCirculo(cor: string, nome: string) {
   })
 }
 
-function CentralizarMapa({ pos }: { pos: { lat: number; lng: number } | null }) {
+function CentralizarMapa({ pos, ativo }: { pos: { lat: number; lng: number } | null, ativo: boolean }) {
   const map = useMap()
   useEffect(() => {
-    if (pos) map.setView([pos.lat, pos.lng], map.getZoom())
-  }, [pos])
+    if (pos && ativo) map.setView([pos.lat, pos.lng], map.getZoom())
+  }, [ativo])
   return null
 }
 
-export default function MapaLeaflet({ minhaPos, localizacoes }: { minhaPos: any; localizacoes: any[] }) {
+export default function MapaLeaflet({ minhaPos, localizacoes, centralizar }: { minhaPos: any; localizacoes: any[]; centralizar: boolean }) {
   const centro = minhaPos || { lat: -22.9068, lng: -43.1729 }
 
   return (
@@ -89,7 +89,7 @@ export default function MapaLeaflet({ minhaPos, localizacoes }: { minhaPos: any;
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
 
-      <CentralizarMapa pos={minhaPos} />
+      <CentralizarMapa pos={minhaPos} ativo={centralizar} />
 
       {minhaPos && (
         <Marker position={[minhaPos.lat, minhaPos.lng]} icon={criarIconeMeu()} />

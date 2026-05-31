@@ -174,7 +174,7 @@ useEffect(() => {
       </div>
 
       {/* Botão centralizar */}
-      <div style={{ position: "fixed", bottom: "90px", left: "24px" }}>
+      <div style={{ position: "fixed", bottom: "90px", left: "24px", zIndex: 1000 }}>
         <button style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -186,7 +186,7 @@ useEffect(() => {
       </div>
 
       {/* Botão grupos */}
-      <div style={{ position: "fixed", bottom: "148px", right: "24px" }}>
+      <div style={{ position: "fixed", bottom: "148px", right: "24px",zIndex: 1000 }}>
         <button onClick={() => setModalGrupos(true)} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -209,7 +209,7 @@ useEffect(() => {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "90px", right: "24px" }}>
+      <div style={{ position: "fixed", bottom: "90px", right: "24px", zIndex: 1000}}>
         <button style={{
           width: "56px", height: "56px", borderRadius: "50%",
           backgroundColor: "#ef4444", border: "4px solid white",
