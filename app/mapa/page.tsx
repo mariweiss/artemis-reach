@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, onSnapshot, doc, setDoc, query, where } from "firebase/firestore"
+import { collection, onSnapshot, doc, setDoc, query, where, getDoc } from "firebase/firestore"
 import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -82,21 +82,29 @@ export default function Mapa() {
     const idsParaMostrar = new Set<string>()
     grupos.forEach((grupo) => {
       if (gruposSelecionados.has(grupo.id)) {
-        ;(grupo.membros || []).forEach((uid: string) => {
+        ; (grupo.membros || []).forEach((uid: string) => {
           if (uid !== usuarioId) idsParaMostrar.add(uid)
         })
       }
     })
     if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
     const q = query(collection(db, "localizacoes"), where("usuario_id", "in", [...idsParaMostrar]))
-    const unsub = onSnapshot(q, (snap) => {
-      const locs = snap.docs.map((d) => {
+    const unsub = onSnapshot(q, async (snap) => {
+      const locs = await Promise.all(snap.docs.map(async (d) => {
         const data = { id: d.id, ...d.data() } as any
         const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
         data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
         data.nomeGrupo = grupoDoMembro?.nome || ""
+        try {
+          const perfil = await getDoc(doc(db, "usuarios", data.usuario_id))
+          if (perfil.exists()) {
+            data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
+          }
+        } catch {
+          data.nomeUsuaria = "Usuária"
+        }
         return data
-      })
+      }))
       setLocalizacoes(locs)
     })
     return () => unsub()
