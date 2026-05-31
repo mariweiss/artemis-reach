@@ -5,7 +5,6 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
-// Corrige ícones padrão do Leaflet no Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -13,24 +12,57 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 })
 
-function criarIcone(cor: string) {
+function criarIconeMeu() {
   return L.divIcon({
     className: "",
     html: `
-      <div style="
-        width: 36px; height: 36px; border-radius: 50%;
-        background-color: ${cor};
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        display: flex; align-items: center; justify-content: center;
-      ">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-        </svg>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="
+          width:36px;height:36px;border-radius:50%;
+          background:#2F195F;border:3px solid white;
+          box-shadow:0 2px 8px rgba(0,0,0,0.3);
+          display:flex;align-items:center;justify-content:center;
+        ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        </div>
+        <div style="
+          background:white;padding:2px 8px;border-radius:10px;
+          font-size:11px;font-weight:700;color:#2F195F;
+          box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;
+        ">Você</div>
       </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [60, 56],
+    iconAnchor: [30, 18],
+  })
+}
+
+function criarIconeCirculo(cor: string, nome: string) {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="
+          width:36px;height:36px;border-radius:50%;
+          background:${cor};border:3px solid white;
+          box-shadow:0 2px 8px rgba(0,0,0,0.2);
+          display:flex;align-items:center;justify-content:center;
+        ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        </div>
+        <div style="
+          background:white;padding:2px 8px;border-radius:10px;
+          font-size:11px;font-weight:700;color:#2F195F;
+          box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;
+        ">${nome}</div>
+      </div>
+    `,
+    iconSize: [80, 56],
+    iconAnchor: [40, 18],
   })
 }
 
@@ -59,22 +91,19 @@ export default function MapaLeaflet({ minhaPos, localizacoes }: { minhaPos: any;
 
       <CentralizarMapa pos={minhaPos} />
 
-      {/* Marcador do usuário */}
       {minhaPos && (
-        <Marker position={[minhaPos.lat, minhaPos.lng]} icon={criarIcone("#2F195F")}>
-          <Popup>Você</Popup>
-        </Marker>
+        <Marker position={[minhaPos.lat, minhaPos.lng]} icon={criarIconeMeu()} />
       )}
 
-      {/* Marcadores do círculo */}
       {localizacoes.map((loc) => (
         <Marker
           key={loc.id}
           position={[loc.latitude, loc.longitude]}
-          icon={criarIcone(loc.corGrupo || "#BB99FF")}
-        >
-          <Popup>{loc.nomeUsuaria || loc.nome || "Usuária"}</Popup>
-        </Marker>
+          icon={criarIconeCirculo(
+            loc.corGrupo || "#BB99FF",
+            loc.nomeUsuaria || loc.nome || "Usuária"
+          )}
+        />
       ))}
     </MapContainer>
   )
