@@ -84,14 +84,23 @@ export default function Mapa() {
     })
     if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
     const q = query(collection(db, "localizacoes"), where("usuario_id", "in", [...idsParaMostrar]))
-    const unsub = onSnapshot(q, (snap) => {
-      const locs = snap.docs.map((d) => {
+    const unsub = onSnapshot(q, async (snap) => {
+      const locs = await Promise.all(snap.docs.map(async (d) => {
         const data = { id: d.id, ...d.data() } as any
         const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
         data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
         data.nomeGrupo = grupoDoMembro?.nome || ""
+        try {
+          const { getDoc, doc: firestoreDoc } = await import("firebase/firestore")
+          const perfil = await getDoc(firestoreDoc(db, "usuarios", data.usuario_id))
+          if (perfil.exists()) {
+            data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
+          }
+        } catch {
+          data.nomeUsuaria = "Usuária"
+        }
         return data
-      })
+      }))
       setLocalizacoes(locs)
     })
     return () => unsub()
@@ -157,7 +166,7 @@ export default function Mapa() {
                   <MapPin size={16} color="white" />
                 </div>
                 <div style={{ backgroundColor: cores.branco, padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: "600", color: cores.roxoEscuro, boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                  {loc.nome || loc.nomeGrupo || "Círculo"}
+                  {loc.nomeUsuaria || loc.nome || "Usuária"}
                 </div>
               </div>
             </AdvancedMarker>
