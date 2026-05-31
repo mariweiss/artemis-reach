@@ -38,9 +38,20 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
   const nome = meu ? "Você" : (nomes[alerta.usuario_id] || "Usuária do círculo")
   const origem = alerta.origem === "dispositivo_echo" ? "Artemis Echo" : "App"
   const ativo = alerta.ativo !== false
-  const linkMapa = alerta.latitude
+  const temLocalizacao = alerta.latitude && alerta.longitude
+  const linkMapa = temLocalizacao
     ? "https://maps.google.com/?q=" + alerta.latitude + "," + alerta.longitude
     : null
+
+  // Gera URL do mini mapa estático via OpenStreetMap
+  const miniMapaUrl = temLocalizacao
+    ? `https://staticmap.openstreetmap.de/staticmap.php?center=${alerta.latitude},${alerta.longitude}&zoom=15&size=400x150&markers=${alerta.latitude},${alerta.longitude},red`
+    : null
+
+  // Monta a mensagem correta
+  const mensagemExibida = alerta.mensagem?.includes("enviou um alerta para você")
+    ? `${nome} acionou um alerta de emergência!`
+    : alerta.mensagem
 
   return (
     <div style={{
@@ -49,6 +60,7 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
       boxShadow: "0 1px 6px rgba(90,73,151,0.07)",
       borderLeft: "4px solid " + (ativo ? "#ef4444" : "#22c55e")
     }}>
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{
@@ -86,26 +98,74 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
         </span>
       </div>
 
-      {alerta.mensagem && (
+      {/* Mensagem */}
+      {mensagemExibida && (
         <p style={{ margin: "0 0 10px", fontSize: "13px", color: "#555", lineHeight: "1.5" }}>
-          {alerta.mensagem}
+          {mensagemExibida}
         </p>
       )}
 
-      {linkMapa && (
-        <a href={linkMapa} target="_blank" rel="noopener noreferrer" style={{
-          display: "flex", alignItems: "center", gap: "6px",
-          backgroundColor: cores.fundo, borderRadius: "10px",
-          padding: "8px 12px", marginBottom: "10px",
-          textDecoration: "none"
-        }}>
-          <Navigation size={14} color={cores.roxo} />
-          <span style={{ fontSize: "12px", color: cores.roxo, fontWeight: "600" }}>
-            Ver localização no mapa
-          </span>
+      {/* Mini mapa + botão */}
+      {temLocalizacao && (
+        <a href={linkMapa!} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", marginBottom: "10px" }}>
+          <div style={{ borderRadius: "12px", overflow: "hidden", position: "relative" }}>
+            {/* Mini mapa via imagem estática */}
+            <img
+              src={miniMapaUrl!}
+              alt="Localização do alerta"
+              style={{ width: "100%", height: "130px", objectFit: "cover", display: "block" }}
+              onError={(e: any) => {
+                // Fallback se a imagem não carregar
+                e.target.style.display = "none"
+                e.target.nextSibling.style.display = "flex"
+              }}
+            />
+            {/* Fallback */}
+            <div style={{
+              display: "none", backgroundColor: cores.fundo,
+              height: "130px", alignItems: "center", justifyContent: "center",
+              flexDirection: "column", gap: "8px"
+            }}>
+              <Navigation size={24} color={cores.roxo} />
+              <span style={{ fontSize: "12px", color: cores.lavanda }}>Ver localização</span>
+            </div>
+            {/* Overlay com botão */}
+            <div style={{
+              position: "absolute", bottom: "8px", right: "8px",
+              backgroundColor: cores.roxo, color: "white",
+              padding: "6px 12px", borderRadius: "20px",
+              fontSize: "11px", fontWeight: "700",
+              display: "flex", alignItems: "center", gap: "6px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+            }}>
+              <Navigation size={12} color="white" />
+              Abrir no mapa
+            </div>
+            {/* Marcador central */}
+            <div style={{
+              position: "absolute", top: "50%", left: "50%",
+              transform: "translate(-50%, -100%)",
+              width: "24px", height: "24px", borderRadius: "50%",
+              backgroundColor: "#ef4444", border: "3px solid white",
+              boxShadow: "0 2px 8px rgba(239,68,68,0.4)"
+            }} />
+          </div>
         </a>
       )}
 
+      {/* Sem localização */}
+      {!temLocalizacao && (
+        <div style={{
+          backgroundColor: cores.fundo, borderRadius: "10px",
+          padding: "10px 12px", marginBottom: "10px",
+          display: "flex", alignItems: "center", gap: "8px"
+        }}>
+          <Navigation size={14} color={cores.lavanda} />
+          <span style={{ fontSize: "12px", color: cores.lavanda }}>Localização não disponível</span>
+        </div>
+      )}
+
+      {/* Ações */}
       {ativo && (
         <div style={{ display: "flex", gap: "8px" }}>
           <a href="tel:190" style={{
