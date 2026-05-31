@@ -26,8 +26,8 @@ const nav = [
   { icon: Bell, label: "Alertas", href: "/alertas" },
 ]
 
-const SERVICE_UUID = "00001234-0000-1000-8000-00805f9b34fb"
-const CHAR_SOS_UUID = "00005678-0000-1000-8000-00805f9b34fb"
+const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+const CHAR_SOS_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
 export default function Dispositivo() {
   const pathname = usePathname()
