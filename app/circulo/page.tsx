@@ -216,32 +216,31 @@ export default function Circulo() {
   }
 
   async function adicionarContato(membroId: string, membroNome: string) {
-    if (!usuario) return
+  if (!usuario) return
 
-    // Verifica se já é contato
-    const q = query(
-      collection(db, "circulos"),
-      where("usuarios", "array-contains", usuario.uid),
-      where("status", "==", "confirmado")
-    )
-    const snap = await getDocs(q)
-    const jaExiste = snap.docs.some(d => {
-      const data = d.data()
-      return data.usuarios.includes(membroId)
-    })
+  const q = query(
+    collection(db, "circulos"),
+    where("usuarios", "array-contains", usuario.uid),
+    where("status", "==", "confirmado")
+  )
+  const snap = await getDocs(q)
+  const jaExiste = snap.docs.some(d => {
+    const data = d.data() as any
+    return data.usuarios.includes(membroId)
+  })
 
-    if (jaExiste) {
-      alert(`${membroNome} já está nos seus contatos!`)
-      return
-    }
+  if (jaExiste) {
+    alert(`${membroNome} já está nos seus contatos!`)
+    return
+  }
 
-    await addDoc(collection(db, "circulos"), {
-      usuarios: [usuario.uid, membroId],
-      status: "confirmado",
-      compartilha: { [usuario.uid]: false, [membroId]: false },
-      criado_em: new Date().toISOString()
-    })
-    alert(`${membroNome} adicionada aos seus contatos!`)
+  await addDoc(collection(db, "circulos"), {
+    usuarios: [usuario.uid, membroId],
+    status: "confirmado",
+    compartilha: { [usuario.uid]: false, [membroId]: false },
+    criado_em: new Date().toISOString()
+  })
+  alert(`${membroNome} adicionada aos seus contatos!`)
   }
 
   if (carregando) return (
