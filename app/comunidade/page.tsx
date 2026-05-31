@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore"
 import {
   MapPin, Users, MessageSquare, Home, Bell,
-  Lock, User, Heart, ThumbsUp, Flag, X,
+  Lock, User, ThumbsUp, Flag, X,
   Send, Paperclip, Image, Star, ChevronRight
 } from "lucide-react"
 import Link from "next/link"
@@ -122,7 +122,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
   }
 
   if (!grupoSelecionado) return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: "16px 16px 140px 16px" }}>
       <p style={{ fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
         Seus círculos
       </p>
@@ -400,9 +400,6 @@ useEffect(() => {
             <p style={{ margin: "0 0 10px", fontSize: "14px", lineHeight: "1.6", color: "#333" }}>{post.texto}</p>
 
             <div style={{ display: "flex", gap: "12px", paddingTop: "10px", borderTop: `1px solid ${cores.fundo}`, alignItems: "center" }}>
-              <button onClick={() => curtir(post.id, jaGostou)} style={{ display: "flex", alignItems: "center", gap: "5px", background: "none", border: "none", cursor: "pointer", color: jaGostou ? "#e11d48" : cores.lavanda, fontSize: "12px", padding: 0 }}>
-                <Heart size={14} fill={jaGostou ? "#e11d48" : "none"} /> {post.curtidas || 0}
-              </button>
               <button onClick={() => confirmar(post.id, jaConfirmou)} style={{ display: "flex", alignItems: "center", gap: "5px", background: "none", border: "none", cursor: "pointer", color: jaConfirmou ? "#16a34a" : cores.lavanda, fontSize: "12px", padding: 0 }}>
                 <ThumbsUp size={14} fill={jaConfirmou ? "#16a34a" : "none"} /> {post.confirmacoes || 0}
               </button>
