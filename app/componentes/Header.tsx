@@ -18,7 +18,6 @@ const cores = {
 const menuItens = [
   { icon: Smartphone, label: "Dispositivo Echo", href: "/dispositivo", destaque: true },
   { icon: User, label: "Perfil", href: "/perfil" },
-  { icon: Users, label: "Contatos", href: "/contatos" },
   { icon: Lock, label: "Privacidade", href: "/privacidade" },
   { icon: Shield, label: "Segurança", href: "/seguranca" },
   { icon: Settings, label: "Configurações", href: "/configuracoes" },
