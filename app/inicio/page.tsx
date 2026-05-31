@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged, User } from "firebase/auth"
-import { doc, getDoc, collection, addDoc} from "firebase/firestore"
+import { doc, getDoc, collection, addDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import { MapPin, Users, MessageSquare, Home, Bell, Shield, Phone, Bluetooth, Volume2, Navigation, X } from "lucide-react"
 import Link from "next/link"
@@ -116,18 +116,32 @@ export default function Inicio() {
 
   async function ativarSOS() {
     setSosAtivo(true)
-    navigator.geolocation?.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords
-      const linkMaps = `https://maps.google.com/?q=${latitude},${longitude}`
-      await addDoc(collection(db, "alertas_sos"), {
-        usuario_id: usuario?.uid || "anonimo",
-        latitude,
-        longitude,
-        modo_silencioso: modoSilencioso,
-        ativo: true,
-        criado_em: new Date().toISOString()
-      })
-    })
+    navigator.geolocation?.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords
+        await addDoc(collection(db, "alertas_sos"), {
+          usuario_id: usuario?.uid || "anonimo",
+          origem: "app",
+          latitude,
+          longitude,
+          modo_silencioso: modoSilencioso,
+          mensagem: `${nomeUsuario} acionou o botão SOS!`,
+          ativo: true,
+          criado_em: new Date().toISOString()
+        })
+      },
+      async () => {
+        // Salva mesmo sem GPS
+        await addDoc(collection(db, "alertas_sos"), {
+          usuario_id: usuario?.uid || "anonimo",
+          origem: "app",
+          modo_silencioso: modoSilencioso,
+          mensagem: `${nomeUsuario} acionou o botão SOS!`,
+          ativo: true,
+          criado_em: new Date().toISOString()
+        })
+      }
+    )
     setTimeout(() => setAlertaEnviado(true), 500)
   }
 
@@ -294,9 +308,9 @@ export default function Inicio() {
         <div style={{ padding: "0 24px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
             {[
-              { icon: <Navigation size={18} color={cores.roxo} />, label: "Compartilhar rota", vermelho: false, acao: () => {} },
+              { icon: <Navigation size={18} color={cores.roxo} />, label: "Compartilhar rota", vermelho: false, acao: () => { } },
               { icon: <Phone size={18} color="white" />, label: "Ligar 190", vermelho: true, acao: () => window.open("tel:190") },
-              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo Echo", vermelho: false, acao: () => {} },
+              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo Echo", vermelho: false, acao: () => { } },
               { icon: <Volume2 size={18} color={cores.roxo} />, label: "Sirene sonora", vermelho: false, acao: tocarSirene },
             ].map((item, i) => (
               <button key={i} onClick={item.acao} style={{
