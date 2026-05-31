@@ -73,7 +73,7 @@ export default function MapaLeaflet({ minhaPos, localizacoes }: { minhaPos: any;
           position={[loc.latitude, loc.longitude]}
           icon={criarIcone(loc.corGrupo || "#BB99FF")}
         >
-          <Popup>{loc.nome || loc.nomeGrupo || "Círculo"}</Popup>
+          <Popup>{loc.nomeUsuaria || loc.nome || "Usuária"}</Popup>
         </Marker>
       ))}
     </MapContainer>
