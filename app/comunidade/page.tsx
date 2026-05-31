@@ -122,7 +122,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
   }
 
   if (!grupoSelecionado) return (
-    <div style={{ padding: "16px 16px 140px 16px" }}>
+    <div style={{ padding: "16px" }}>
       <p style={{ fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
         Seus círculos
       </p>
@@ -245,17 +245,17 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   const [ordenacao, setOrdenacao] = useState("recentes")
   const [filtroTipo, setFiltroTipo] = useState("todos")
 
-useEffect(() => {
-  const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
-  const unsub = onSnapshot(q, (snap) => {
-    const dados = snap.docs.map(d => {
-      const data = d.data() as any
-      return { id: d.id, ...data }
-    }).filter((p: any) => p.criado_em && (p.denuncias || 0) < 5)
-    setPosts(dados)
-  })
-  return () => unsub()
-}, [])
+  useEffect(() => {
+    const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
+    const unsub = onSnapshot(q, (snap) => {
+      const dados = snap.docs.map(d => {
+        const data = d.data() as any
+        return { id: d.id, ...data }
+      }).filter((p: any) => p.criado_em && (p.denuncias || 0) < 5)
+      setPosts(dados)
+    })
+    return () => unsub()
+  }, [])
 
   async function obterGPS() {
     setCarregandoGPS(true)
@@ -340,7 +340,7 @@ useEffect(() => {
   const tipoInfo = (t: string) => TIPOS.find(x => x.valor === t) || TIPOS[0]
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: "16px 16px 160px 16px" }}>
       {/* Filtros */}
       <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap" }}>
         {["recentes", "relevantes"].map(ord => (
@@ -514,7 +514,7 @@ export default function Comunidade() {
         try {
           const snap = await getDoc(doc(db, "usuarios", user.uid))
           if (snap.exists()) setNomeUsuario(snap.data().nome?.split(" ")[0] || "Usuária")
-        } catch {}
+        } catch { }
       }
     })
     return () => unsub()
