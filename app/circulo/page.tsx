@@ -189,6 +189,13 @@ export default function Circulo() {
     await deleteDoc(doc(db, "grupos", grupoId))
   }
 
+  async function removerContato(circuloId: string, nomeContato: string) {
+    const confirmado = window.confirm(`Você deseja mesmo remover ${nomeContato} dos seus contatos?`)
+    if (!confirmado) return
+    await deleteDoc(doc(db, "circulos", circuloId))
+    alert(`${nomeContato} foi removido dos seus contatos.`)
+  }
+
   async function aceitarConvite(convite: any) {
     await addDoc(collection(db, "circulos"), {
       usuarios: [convite.criador_id, usuario.uid],
@@ -216,31 +223,31 @@ export default function Circulo() {
   }
 
   async function adicionarContato(membroId: string, membroNome: string) {
-  if (!usuario) return
+    if (!usuario) return
 
-  const q = query(
-    collection(db, "circulos"),
-    where("usuarios", "array-contains", usuario.uid),
-    where("status", "==", "confirmado")
-  )
-  const snap = await getDocs(q)
-  const jaExiste = snap.docs.some(d => {
-    const data = d.data() as any
-    return data.usuarios.includes(membroId)
-  })
+    const q = query(
+      collection(db, "circulos"),
+      where("usuarios", "array-contains", usuario.uid),
+      where("status", "==", "confirmado")
+    )
+    const snap = await getDocs(q)
+    const jaExiste = snap.docs.some(d => {
+      const data = d.data() as any
+      return data.usuarios.includes(membroId)
+    })
 
-  if (jaExiste) {
-    alert(`${membroNome} já está nos seus contatos!`)
-    return
-  }
+    if (jaExiste) {
+      alert(`${membroNome} já está nos seus contatos!`)
+      return
+    }
 
-  await addDoc(collection(db, "circulos"), {
-    usuarios: [usuario.uid, membroId],
-    status: "confirmado",
-    compartilha: { [usuario.uid]: false, [membroId]: false },
-    criado_em: new Date().toISOString()
-  })
-  alert(`${membroNome} adicionada aos seus contatos!`)
+    await addDoc(collection(db, "circulos"), {
+      usuarios: [usuario.uid, membroId],
+      status: "confirmado",
+      compartilha: { [usuario.uid]: false, [membroId]: false },
+      criado_em: new Date().toISOString()
+    })
+    alert(`${membroNome} adicionada aos seus contatos!`)
   }
 
   if (carregando) return (
@@ -436,6 +443,9 @@ export default function Circulo() {
                     )}
                     <button onClick={() => enviarAlerta(conexao.outroId)} style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                       <AlertCircle size={16} color="#ef4444" />
+                    </button>
+                    <button onClick={() => removerContato(conexao.id, conexao.nome)} style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      <Trash2 size={16} color="#ef4444" />
                     </button>
                   </div>
                 </div>

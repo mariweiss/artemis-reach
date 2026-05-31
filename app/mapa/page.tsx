@@ -77,19 +77,42 @@ export default function Mapa() {
     return () => navigator.geolocation.clearWatch(watchId)
   }, [usuarioId])
 
-  useEffect(() => {
-    if (!usuarioId || grupos.length === 0) { setLocalizacoes([]); return }
-    const idsParaMostrar = new Set<string>()
-    grupos.forEach((grupo) => {
-      if (gruposSelecionados.has(grupo.id)) {
-        ; (grupo.membros || []).forEach((uid: string) => {
-          if (uid !== usuarioId) idsParaMostrar.add(uid)
-        })
-      }
+useEffect(() => {
+  if (!usuarioId) return
+
+  const idsParaMostrar = new Set<string>()
+
+  // IDs dos grupos selecionados
+  grupos.forEach((grupo) => {
+    if (gruposSelecionados.has(grupo.id)) {
+      ;(grupo.membros || []).forEach((uid: string) => {
+        if (uid !== usuarioId) idsParaMostrar.add(uid)
+      })
+    }
+  })
+
+  // Busca também contatos individuais do círculo
+  const qCirculo = query(
+    collection(db, "circulos"),
+    where("usuarios", "array-contains", usuarioId),
+    where("status", "==", "confirmado")
+  )
+
+  const unsubCirculo = onSnapshot(qCirculo, async (snapCirculo) => {
+    snapCirculo.docs.forEach(d => {
+      const data = d.data() as any
+      const outroId = data.usuarios.find((id: string) => id !== usuarioId)
+      if (outroId) idsParaMostrar.add(outroId)
     })
+
     if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
-    const q = query(collection(db, "localizacoes"), where("usuario_id", "in", [...idsParaMostrar]))
-    const unsub = onSnapshot(q, async (snap) => {
+
+    const q = query(
+      collection(db, "localizacoes"),
+      where("usuario_id", "in", [...idsParaMostrar])
+    )
+
+    onSnapshot(q, async (snap) => {
       const locs = await Promise.all(snap.docs.map(async (d) => {
         const data = { id: d.id, ...d.data() } as any
         const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
@@ -107,7 +130,9 @@ export default function Mapa() {
       }))
       setLocalizacoes(locs)
     })
-    return () => unsub()
+  })
+
+  return () => unsubCirculo()
   }, [usuarioId, grupos, gruposSelecionados])
 
   function toggleGrupo(grupoId: string) {
