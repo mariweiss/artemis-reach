@@ -39,6 +39,7 @@ export default function Mapa() {
   const [gruposSelecionados, setGruposSelecionados] = useState<Set<string>>(new Set())
   const [modalGrupos, setModalGrupos] = useState(false)
   const pathname = usePathname()
+  const [centralizar, setCentralizar] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -77,62 +78,62 @@ export default function Mapa() {
     return () => navigator.geolocation.clearWatch(watchId)
   }, [usuarioId])
 
-useEffect(() => {
-  if (!usuarioId) return
+  useEffect(() => {
+    if (!usuarioId) return
 
-  const idsParaMostrar = new Set<string>()
+    const idsParaMostrar = new Set<string>()
 
-  // IDs dos grupos selecionados
-  grupos.forEach((grupo) => {
-    if (gruposSelecionados.has(grupo.id)) {
-      ;(grupo.membros || []).forEach((uid: string) => {
-        if (uid !== usuarioId) idsParaMostrar.add(uid)
-      })
-    }
-  })
-
-  // Busca também contatos individuais do círculo
-  const qCirculo = query(
-    collection(db, "circulos"),
-    where("usuarios", "array-contains", usuarioId),
-    where("status", "==", "confirmado")
-  )
-
-  const unsubCirculo = onSnapshot(qCirculo, async (snapCirculo) => {
-    snapCirculo.docs.forEach(d => {
-      const data = d.data() as any
-      const outroId = data.usuarios.find((id: string) => id !== usuarioId)
-      if (outroId) idsParaMostrar.add(outroId)
+    // IDs dos grupos selecionados
+    grupos.forEach((grupo) => {
+      if (gruposSelecionados.has(grupo.id)) {
+        ; (grupo.membros || []).forEach((uid: string) => {
+          if (uid !== usuarioId) idsParaMostrar.add(uid)
+        })
+      }
     })
 
-    if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
-
-    const q = query(
-      collection(db, "localizacoes"),
-      where("usuario_id", "in", [...idsParaMostrar])
+    // Busca também contatos individuais do círculo
+    const qCirculo = query(
+      collection(db, "circulos"),
+      where("usuarios", "array-contains", usuarioId),
+      where("status", "==", "confirmado")
     )
 
-    onSnapshot(q, async (snap) => {
-      const locs = await Promise.all(snap.docs.map(async (d) => {
-        const data = { id: d.id, ...d.data() } as any
-        const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
-        data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
-        data.nomeGrupo = grupoDoMembro?.nome || ""
-        try {
-          const perfil = await getDoc(doc(db, "usuarios", data.usuario_id))
-          if (perfil.exists()) {
-            data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
-          }
-        } catch {
-          data.nomeUsuaria = "Usuária"
-        }
-        return data
-      }))
-      setLocalizacoes(locs)
-    })
-  })
+    const unsubCirculo = onSnapshot(qCirculo, async (snapCirculo) => {
+      snapCirculo.docs.forEach(d => {
+        const data = d.data() as any
+        const outroId = data.usuarios.find((id: string) => id !== usuarioId)
+        if (outroId) idsParaMostrar.add(outroId)
+      })
 
-  return () => unsubCirculo()
+      if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
+
+      const q = query(
+        collection(db, "localizacoes"),
+        where("usuario_id", "in", [...idsParaMostrar])
+      )
+
+      onSnapshot(q, async (snap) => {
+        const locs = await Promise.all(snap.docs.map(async (d) => {
+          const data = { id: d.id, ...d.data() } as any
+          const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
+          data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
+          data.nomeGrupo = grupoDoMembro?.nome || ""
+          try {
+            const perfil = await getDoc(doc(db, "usuarios", data.usuario_id))
+            if (perfil.exists()) {
+              data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
+            }
+          } catch {
+            data.nomeUsuaria = "Usuária"
+          }
+          return data
+        }))
+        setLocalizacoes(locs)
+      })
+    })
+
+    return () => unsubCirculo()
   }, [usuarioId, grupos, gruposSelecionados])
 
   function toggleGrupo(grupoId: string) {
@@ -170,23 +171,18 @@ useEffect(() => {
 
       {/* Mapa Leaflet */}
       <div style={{ width: "100%", height: "calc(100vh - 170px)" }}>
-        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} />
+        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} />
       </div>
 
       {/* Botão centralizar */}
       <div style={{ position: "fixed", bottom: "90px", left: "24px", zIndex: 1000 }}>
-        <button style={{
-          width: "44px", height: "44px", borderRadius: "50%",
-          backgroundColor: cores.branco, border: "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
-        }}>
+        <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }} style={{ ...}}>
           <Navigation size={20} color={cores.roxo} />
         </button>
       </div>
 
       {/* Botão grupos */}
-      <div style={{ position: "fixed", bottom: "148px", right: "24px",zIndex: 1000 }}>
+      <div style={{ position: "fixed", bottom: "148px", right: "24px", zIndex: 1000 }}>
         <button onClick={() => setModalGrupos(true)} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -209,7 +205,7 @@ useEffect(() => {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "90px", right: "24px", zIndex: 1000}}>
+      <div style={{ position: "fixed", bottom: "90px", right: "24px", zIndex: 1000 }}>
         <button style={{
           width: "56px", height: "56px", borderRadius: "50%",
           backgroundColor: "#ef4444", border: "4px solid white",
