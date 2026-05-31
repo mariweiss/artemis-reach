@@ -138,7 +138,7 @@ export default function Alertas() {
   const [alertasRecebidos, setAlertasRecebidos] = useState<any[]>([])
   const [meusSOS, setMeusSOS] = useState<any[]>([])
   const [aba, setAba] = useState("recebidos")
-  const [nomes, setNomes] = useState({})
+  const [nomes, setNomes] = useState<any>({})
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -150,18 +150,46 @@ export default function Alertas() {
 
   useEffect(() => {
     if (!usuario) return
-    const qCirculo = query(
-      collection(db, "circulos"),
-      where("usuarios", "array-contains", usuario.uid),
-      where("status", "==", "confirmado")
-    )
-    const unsub = onSnapshot(qCirculo, async (snapCirculo) => {
-      const idsCirculo = snapCirculo.docs.flatMap(d => {
-        const data = d.data()
-        return data.usuarios.filter(id => id !== usuario.uid)
+
+    async function buscarAlertas() {
+      const idsSet = new Set<string>()
+
+      // Busca contatos do círculo individual
+      const qCirculo = query(
+        collection(db, "circulos"),
+        where("usuarios", "array-contains", usuario.uid),
+        where("status", "==", "confirmado")
+      )
+      const snapCirculo = await new Promise<any>((resolve) => {
+        const unsub = onSnapshot(qCirculo, (snap) => { resolve(snap); unsub() })
       })
+      snapCirculo.docs.forEach((d: any) => {
+        const data = d.data()
+        data.usuarios
+          .filter((id: string) => id !== usuario.uid)
+          .forEach((id: string) => idsSet.add(id))
+      })
+
+      // Busca membros dos grupos
+      const qGrupos = query(
+        collection(db, "grupos"),
+        where("membros", "array-contains", usuario.uid)
+      )
+      const snapGrupos = await new Promise<any>((resolve) => {
+        const unsub = onSnapshot(qGrupos, (snap) => { resolve(snap); unsub() })
+      })
+      snapGrupos.docs.forEach((d: any) => {
+        const data = d.data()
+        ;(data.membros || [])
+          .filter((id: string) => id !== usuario.uid)
+          .forEach((id: string) => idsSet.add(id))
+      })
+
+      const idsCirculo = [...idsSet]
       if (idsCirculo.length === 0) return
-      const nomesTemp = {}
+
+      // Busca nomes
+      const nomesTemp: any = {}
       await Promise.all(idsCirculo.map(async (id) => {
         try {
           const perfil = await getDoc(doc(db, "usuarios", id))
@@ -169,18 +197,26 @@ export default function Alertas() {
         } catch { nomesTemp[id] = "Usuária" }
       }))
       setNomes(nomesTemp)
+
+      // Escuta alertas em tempo real
       const qAlertas = query(
         collection(db, "alertas_sos"),
         where("usuario_id", "in", idsCirculo),
         orderBy("criado_em", "desc")
       )
       onSnapshot(qAlertas, (snap) => {
-        setAlertasRecebidos(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+        setAlertasRecebidos(
+          snap.docs
+            .map(d => ({ id: d.id, ...d.data() } as any))
+            .filter((a: any) => a.usuario_id !== usuario.uid)
+        )
       })
-    })
-    return () => unsub()
+    }
+
+    buscarAlertas()
   }, [usuario])
 
+  // Meus próprios alertas
   useEffect(() => {
     if (!usuario) return
     const q = query(
@@ -189,12 +225,12 @@ export default function Alertas() {
       orderBy("criado_em", "desc")
     )
     const unsub = onSnapshot(q, (snap) => {
-      setMeusSOS(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setMeusSOS(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)))
     })
     return () => unsub()
   }, [usuario])
 
-  async function resolverAlerta(alertaId) {
+  async function resolverAlerta(alertaId: string) {
     await updateDoc(doc(db, "alertas_sos", alertaId), { ativo: false })
   }
 
@@ -222,6 +258,7 @@ export default function Alertas() {
           Alertas do seu círculo em tempo real
         </p>
 
+        {/* Abas */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
           {[
             { id: "recebidos", label: "Recebidos", count: alertasRecebidos.length },
@@ -250,6 +287,7 @@ export default function Alertas() {
           ))}
         </div>
 
+        {/* Lista */}
         {listaAtual.length === 0 ? (
           <div style={{
             backgroundColor: cores.branco, borderRadius: "16px",
@@ -282,6 +320,7 @@ export default function Alertas() {
         )}
       </div>
 
+      {/* Navegação inferior */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
         backgroundColor: cores.branco, borderTop: "1px solid " + cores.fundo,
