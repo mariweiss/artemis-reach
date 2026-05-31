@@ -5,7 +5,7 @@ import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import {
   collection, addDoc, onSnapshot, doc, getDoc,
-  updateDoc, deleteDoc, query, where, arrayUnion, arrayRemove
+  updateDoc, deleteDoc, query, where, arrayUnion, arrayRemove, getDocs
 } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import {
@@ -215,6 +215,35 @@ export default function Circulo() {
     alert("Alerta enviado!")
   }
 
+  async function adicionarContato(membroId: string, membroNome: string) {
+    if (!usuario) return
+
+    // Verifica se já é contato
+    const q = query(
+      collection(db, "circulos"),
+      where("usuarios", "array-contains", usuario.uid),
+      where("status", "==", "confirmado")
+    )
+    const snap = await getDocs(q)
+    const jaExiste = snap.docs.some(d => {
+      const data = d.data()
+      return data.usuarios.includes(membroId)
+    })
+
+    if (jaExiste) {
+      alert(`${membroNome} já está nos seus contatos!`)
+      return
+    }
+
+    await addDoc(collection(db, "circulos"), {
+      usuarios: [usuario.uid, membroId],
+      status: "confirmado",
+      compartilha: { [usuario.uid]: false, [membroId]: false },
+      criado_em: new Date().toISOString()
+    })
+    alert(`${membroNome} adicionada aos seus contatos!`)
+  }
+
   if (carregando) return (
     <div style={{ minHeight: "100vh", backgroundColor: cores.fundo, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: `3px solid ${cores.roxo}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
@@ -358,6 +387,9 @@ export default function Circulo() {
                             <>
                               <button onClick={() => enviarAlerta(membro.id)} style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(239,68,68,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                                 <AlertCircle size={15} color="#ef4444" />
+                              </button>
+                              <button onClick={() => adicionarContato(membro.id, membro.nome)} style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(90,73,151,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                <UserPlus size={15} color={cores.roxo} />
                               </button>
                             </>
                           )}
