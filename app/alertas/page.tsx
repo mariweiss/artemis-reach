@@ -6,14 +6,14 @@ import { onAuthStateChanged } from "firebase/auth"
 import { collection, onSnapshot, orderBy, query, where, doc, updateDoc, getDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import {
   MapPin, Users, MessageSquare, Home, Bell,
   AlertCircle, Shield, Smartphone, CheckCircle, Navigation
 } from "lucide-react"
-import dynamic from "next/dynamic"
+import Header from "../componentes/Header"
 
 const MiniMapa = dynamic(() => import("./MiniMapaAlerta"), { ssr: false })
-import Header from "../componentes/Header"
 
 const cores = {
   fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F",
@@ -46,12 +46,6 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
     ? "https://maps.google.com/?q=" + alerta.latitude + "," + alerta.longitude
     : null
 
-  // Gera URL do mini mapa estático via OpenStreetMap
-  const miniMapaUrl = temLocalizacao
-    ? `https://staticmap.openstreetmap.de/staticmap.php?center=${alerta.latitude},${alerta.longitude}&zoom=15&size=400x150&markers=${alerta.latitude},${alerta.longitude},red`
-    : null
-
-  // Monta a mensagem correta
   const mensagemExibida = alerta.mensagem?.includes("enviou um alerta para você")
     ? `${nome} acionou um alerta de emergência!`
     : alerta.mensagem
@@ -108,52 +102,30 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
         </p>
       )}
 
-      {/* Mini mapa + botão */}
+      {/* Mini mapa */}
       {temLocalizacao && (
-        <a href={linkMapa!} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", marginBottom: "10px" }}>
-          <div style={{ borderRadius: "12px", overflow: "hidden", position: "relative" }}>
-            {/* Mini mapa via imagem estática */}
-            <img
-              src={miniMapaUrl!}
-              alt="Localização do alerta"
-              style={{ width: "100%", height: "130px", objectFit: "cover", display: "block" }}
-              onError={(e: any) => {
-                // Fallback se a imagem não carregar
-                e.target.style.display = "none"
-                e.target.nextSibling.style.display = "flex"
+        <div style={{ marginBottom: "10px" }}>
+          <div style={{ borderRadius: "12px", overflow: "hidden", position: "relative", marginBottom: "8px" }}>
+            <MiniMapa lat={alerta.latitude} lng={alerta.longitude} />
+            
+              href={linkMapa!}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                position: "absolute", bottom: "8px", right: "8px", zIndex: 10,
+                backgroundColor: cores.roxo, color: "white",
+                padding: "6px 12px", borderRadius: "20px",
+                fontSize: "11px", fontWeight: "700",
+                display: "flex", alignItems: "center", gap: "6px",
+                textDecoration: "none",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
               }}
-            />
-            {/* Fallback */}
-            <div style={{
-              display: "none", backgroundColor: cores.fundo,
-              height: "130px", alignItems: "center", justifyContent: "center",
-              flexDirection: "column", gap: "8px"
-            }}>
-              <Navigation size={24} color={cores.roxo} />
-              <span style={{ fontSize: "12px", color: cores.lavanda }}>Ver localização</span>
-            </div>
-            {/* Overlay com botão */}
-            <div style={{
-              position: "absolute", bottom: "8px", right: "8px",
-              backgroundColor: cores.roxo, color: "white",
-              padding: "6px 12px", borderRadius: "20px",
-              fontSize: "11px", fontWeight: "700",
-              display: "flex", alignItems: "center", gap: "6px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
-            }}>
+            >
               <Navigation size={12} color="white" />
               Abrir no mapa
-            </div>
-            {/* Marcador central */}
-            <div style={{
-              position: "absolute", top: "50%", left: "50%",
-              transform: "translate(-50%, -100%)",
-              width: "24px", height: "24px", borderRadius: "50%",
-              backgroundColor: "#ef4444", border: "3px solid white",
-              boxShadow: "0 2px 8px rgba(239,68,68,0.4)"
-            }} />
+            </a>
           </div>
-        </a>
+        </div>
       )}
 
       {/* Sem localização */}
@@ -217,7 +189,6 @@ export default function Alertas() {
     async function buscarAlertas() {
       const idsSet = new Set<string>()
 
-      // Busca contatos do círculo individual
       const qCirculo = query(
         collection(db, "circulos"),
         where("usuarios", "array-contains", usuario.uid),
@@ -233,7 +204,6 @@ export default function Alertas() {
           .forEach((id: string) => idsSet.add(id))
       })
 
-      // Busca membros dos grupos
       const qGrupos = query(
         collection(db, "grupos"),
         where("membros", "array-contains", usuario.uid)
@@ -251,7 +221,6 @@ export default function Alertas() {
       const idsCirculo = [...idsSet]
       if (idsCirculo.length === 0) return
 
-      // Busca nomes
       const nomesTemp: any = {}
       await Promise.all(idsCirculo.map(async (id) => {
         try {
@@ -261,7 +230,6 @@ export default function Alertas() {
       }))
       setNomes(nomesTemp)
 
-      // Escuta alertas em tempo real
       const qAlertas = query(
         collection(db, "alertas_sos"),
         where("usuario_id", "in", idsCirculo),
@@ -279,7 +247,6 @@ export default function Alertas() {
     buscarAlertas()
   }, [usuario])
 
-  // Meus próprios alertas
   useEffect(() => {
     if (!usuario) return
     const q = query(
@@ -321,7 +288,6 @@ export default function Alertas() {
           Alertas do seu círculo em tempo real
         </p>
 
-        {/* Abas */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
           {[
             { id: "recebidos", label: "Recebidos", count: alertasRecebidos.length },
@@ -350,7 +316,6 @@ export default function Alertas() {
           ))}
         </div>
 
-        {/* Lista */}
         {listaAtual.length === 0 ? (
           <div style={{
             backgroundColor: cores.branco, borderRadius: "16px",
@@ -383,7 +348,6 @@ export default function Alertas() {
         )}
       </div>
 
-      {/* Navegação inferior */}
       <div style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
         backgroundColor: cores.branco, borderTop: "1px solid " + cores.fundo,
