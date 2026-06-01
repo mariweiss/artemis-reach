@@ -175,7 +175,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão centralizar */}
-      <div style={{ position: "fixed", bottom: "75px", left: "24px", zIndex: 1000 }}>
+      <div style={{ position: "fixed", bottom: "75px", left: "24px", zIndex: 999 }}>
         <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }}
           style={{
             width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.branco,
@@ -187,7 +187,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão grupos */}
-      <div style={{ position: "fixed", bottom: "135px", right: "24px", zIndex: 1000 }}>
+      <div style={{ position: "fixed", bottom: "135px", right: "24px", zIndex: 999 }}>
         <button onClick={() => setModalGrupos(true)} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -210,7 +210,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "75px", right: "24px", zIndex: 1000 }}>
+      <div style={{ position: "fixed", bottom: "75px", right: "24px", zIndex: 999 }}>
         <button style={{
           width: "56px", height: "56px", borderRadius: "50%",
           backgroundColor: "#ef4444", border: "4px solid white",
@@ -309,11 +309,10 @@ export default function Mapa() {
 
       {/* Navbar */}
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 999,
         backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
         display: "flex", justifyContent: "space-around",
         padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)",
-        zIndex: 3000
       }}>
         {nav.map((item) => {
           const ativo = pathname === item.href
