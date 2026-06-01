@@ -170,16 +170,18 @@ export default function Mapa() {
       </div>
 
       {/* Mapa Leaflet */}
-      <div style={{ width: "100%", height: "calc(100vh - 170px)" }}>
+      <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>        
         <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} />
       </div>
 
       {/* Botão centralizar */}
       <div style={{ position: "fixed", bottom: "90px", left: "24px", zIndex: 1000 }}>
-        <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }} 
-        style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.branco, 
-        border: "none", display: "flex", alignItems: "center", justifyContent: "center", 
-        cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
+        <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }}
+          style={{
+            width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.branco,
+            border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
+          }}>
           <Navigation size={20} color={cores.roxo} />
         </button>
       </div>
