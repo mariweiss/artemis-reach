@@ -226,7 +226,7 @@ export default function Mapa() {
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0,
             backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
-            padding: "24px", zIndex: 300,
+            padding: "24px", zIndex: 2001,
             boxShadow: "0 -4px 24px rgba(90,73,151,0.15)"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
