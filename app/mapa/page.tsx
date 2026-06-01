@@ -310,7 +310,8 @@ export default function Mapa() {
         position: "fixed", bottom: 0, left: 0, right: 0,
         backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
         display: "flex", justifyContent: "space-around",
-        padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)"
+        padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)",
+        zIndex: 1000
       }}>
         {nav.map((item) => {
           const ativo = pathname === item.href
