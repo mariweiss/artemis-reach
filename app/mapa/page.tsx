@@ -222,7 +222,7 @@ export default function Mapa() {
       {/* Modal grupos */}
       {modalGrupos && (
         <>
-          <div onClick={() => setModalGrupos(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)", zIndex: 200 }} />
+          <div onClick={() => setModalGrupos(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)", zIndex: 2000 }} />
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0,
             backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
