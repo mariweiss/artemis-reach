@@ -443,6 +443,12 @@ export default function Mapa() {
           )
         })}
       </div>
+      <style>{`
+      @keyframes pulse-sos {
+        0%, 100% { box-shadow: 0 4px 20px rgba(239,68,68,0.3); }
+        50% { box-shadow: 0 4px 30px rgba(239,68,68,0.7); }
+      }
+    `}</style>
     </div>
 
   )
