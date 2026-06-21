@@ -227,7 +227,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão centralizar */}
-      <div style={{ position: "fixed", bottom: "75px", left: "24px", zIndex: 999 }}>
+      <div style={{ position: "fixed", bottom: "80px", left: "24px", zIndex: 999 }}>
         <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }}
           style={{
             width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.branco,
@@ -262,7 +262,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "75px", right: "24px", zIndex: 3000 }}>
+      <div style={{ position: "fixed", bottom: "80px", right: "24px", zIndex: 3000 }}>
         <button
           onClick={() => ativarSOSRapido()}
           style={{

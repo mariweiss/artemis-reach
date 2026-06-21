@@ -27,6 +27,7 @@ const menuItens = [
 export default function Header() {
   const [menuAberto, setMenuAberto] = useState(false)
   const router = useRouter()
+  const [hoveredItem, setHoveredItem] = useState<number | null>(null)
 
   async function sair() {
     await signOut(auth)
@@ -85,6 +86,8 @@ export default function Header() {
         />
       )}
 
+
+
       {/* Menu lateral */}
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0,
@@ -133,13 +136,19 @@ export default function Header() {
               key={i}
               href={item.href}
               onClick={() => setMenuAberto(false)}
+              onMouseEnter={() => setHoveredItem(i)}
+              onMouseLeave={() => setHoveredItem(null)}
               style={{
                 display: "flex", alignItems: "center", gap: "14px",
                 padding: "14px 24px", textDecoration: "none",
                 color: item.destaque ? cores.roxo : cores.roxoEscuro,
                 fontWeight: item.destaque ? "600" : "400",
                 fontSize: "15px",
-                borderBottom: i === 0 ? `1px solid ${cores.fundo}` : "none"
+                borderBottom: i === 0 ? `1px solid ${cores.fundo}` : "none",
+                backgroundColor: hoveredItem === i ? "#FDEA72" : "transparent",
+                borderRadius: "8px",
+                margin: "0 8px",
+                transition: "background-color 0.15s ease"
               }}>
               <item.icon size={20} color={item.destaque ? cores.roxo : cores.roxoEscuro} />
               {item.label}
