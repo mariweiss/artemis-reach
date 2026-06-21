@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { collection, onSnapshot, doc, setDoc, query, where, getDoc } from "firebase/firestore"
@@ -40,6 +40,9 @@ export default function Mapa() {
   const [modalGrupos, setModalGrupos] = useState(false)
   const pathname = usePathname()
   const [centralizar, setCentralizar] = useState(false)
+  const [modalSOS, setModalSOS] = useState(false)
+  const [contadorSOS, setContadorSOS] = useState<number | null>(null)
+  const contadorRef = useRef<any>(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -150,6 +153,55 @@ export default function Mapa() {
     else setGruposSelecionados(new Set(grupos.map((g) => g.id)))
   }
 
+  function ativarSOSRapido() {
+    setModalSOS(true)
+    let c = 3
+    setContadorSOS(c)
+    contadorRef.current = setInterval(() => {
+      c--
+      setContadorSOS(c)
+      if (c <= 0) {
+        clearInterval(contadorRef.current)
+        confirmarSOS()
+      }
+    }, 1000)
+  }
+
+  function cancelarSOS() {
+    clearInterval(contadorRef.current)
+    setModalSOS(false)
+    setContadorSOS(null)
+  }
+
+  async function confirmarSOS() {
+    clearInterval(contadorRef.current)
+    setModalSOS(false)
+    setContadorSOS(null)
+
+    navigator.geolocation?.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords
+      const { addDoc, collection: col } = await import("firebase/firestore")
+      await addDoc(col(db, "alertas_sos"), {
+        usuario_id: usuarioId,
+        origem: "app",
+        latitude,
+        longitude,
+        ativo: true,
+        mensagem: "SOS acionado pelo mapa!",
+        criado_em: new Date().toISOString()
+      })
+    }, async () => {
+      const { addDoc, collection: col } = await import("firebase/firestore")
+      await addDoc(col(db, "alertas_sos"), {
+        usuario_id: usuarioId,
+        origem: "app",
+        ativo: true,
+        mensagem: "SOS acionado pelo mapa!",
+        criado_em: new Date().toISOString()
+      })
+    })
+  }
+
   return (
     <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo }}>
       <Header />
@@ -170,7 +222,7 @@ export default function Mapa() {
       </div>
 
       {/* Mapa Leaflet */}
-      <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>        
+      <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>
         <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} />
       </div>
 
@@ -210,16 +262,78 @@ export default function Mapa() {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "75px", right: "24px", zIndex: 999 }}>
-        <button style={{
-          width: "56px", height: "56px", borderRadius: "50%",
-          backgroundColor: "#ef4444", border: "4px solid white",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", boxShadow: "0 4px 20px rgba(239,68,68,0.3)"
-        }}>
+      <div style={{ position: "fixed", bottom: "75px", right: "24px", zIndex: 3000 }}>
+        <button
+          onClick={() => ativarSOSRapido()}
+          style={{
+            width: "56px", height: "56px", borderRadius: "50%",
+            backgroundColor: "#ef4444", border: "4px solid white",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", boxShadow: "0 4px 20px rgba(239,68,68,0.3)",
+            animation: "pulse-sos 2s ease-in-out infinite"
+          }}>
           <AlertCircle size={24} color={cores.branco} />
         </button>
       </div>
+
+      {/* Confirmação SOS */}
+      {modalSOS && (
+        <>
+          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 4000 }} />
+          <div style={{
+            position: "fixed", bottom: 0, left: 0, right: 0,
+            backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
+            padding: "32px 24px", zIndex: 4001,
+            boxShadow: "0 -4px 24px rgba(239,68,68,0.2)"
+          }}>
+            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div style={{
+                width: "64px", height: "64px", borderRadius: "50%",
+                backgroundColor: "rgba(239,68,68,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 16px"
+              }}>
+                <AlertCircle size={32} color="#ef4444" />
+              </div>
+              <h3 style={{ color: cores.roxoEscuro, margin: "0 0 8px", fontSize: "20px" }}>
+                Acionar SOS?
+              </h3>
+              <p style={{ color: cores.lavanda, fontSize: "14px", margin: 0 }}>
+                Seu círculo será notificado com sua localização atual.
+              </p>
+              {contadorSOS !== null && (
+                <div style={{
+                  marginTop: "16px", width: "56px", height: "56px", borderRadius: "50%",
+                  backgroundColor: "#ef4444", color: "white",
+                  fontSize: "24px", fontWeight: "800",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "16px auto 0"
+                }}>
+                  {contadorSOS}
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button onClick={cancelarSOS} style={{
+                flex: 1, padding: "14px", borderRadius: "14px",
+                border: `1.5px solid ${cores.roxoClaro}`,
+                backgroundColor: "transparent", color: cores.roxo,
+                fontSize: "15px", fontWeight: "600", cursor: "pointer"
+              }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarSOS} style={{
+                flex: 2, padding: "14px", borderRadius: "14px",
+                border: "none", backgroundColor: "#ef4444",
+                color: "white", fontSize: "15px", fontWeight: "700",
+                cursor: "pointer"
+              }}>
+                Enviar SOS agora
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Modal grupos */}
       {modalGrupos && (
@@ -330,5 +444,6 @@ export default function Mapa() {
         })}
       </div>
     </div>
+
   )
 }
