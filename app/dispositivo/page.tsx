@@ -15,9 +15,6 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -30,6 +27,8 @@ const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 const CHAR_SOS_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
 export default function Dispositivo() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const router = useRouter()
   const [usuario, setUsuario] = useState<any>(null)

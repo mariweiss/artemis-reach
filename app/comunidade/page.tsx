@@ -19,9 +19,6 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -62,6 +59,8 @@ function formatarHora(timestamp: any) {
 
 // ─── ABA CHAT ───
 function AbaChat({ usuario, nomeUsuario }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const [grupos, setGrupos] = useState<any[]>([])
   const [grupoSelecionado, setGrupoSelecionado] = useState<any>(null)
   const [mensagens, setMensagens] = useState<any[]>([])
@@ -227,6 +226,8 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 
 // ─── ABA COMUNIDADE ───
 function AbaComunidade({ usuario, nomeUsuario }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const [posts, setPosts] = useState<any[]>([])
   const [texto, setTexto] = useState("")
   const [tipo, setTipo] = useState("relato")
@@ -475,6 +476,8 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
 
 // ─── ABA PARCEIROS ───
 function AbaParceiros() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <div style={{ padding: "32px 16px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh" }}>
       <div style={{
@@ -497,6 +500,8 @@ function AbaParceiros() {
 
 // ─── PÁGINA PRINCIPAL ───
 export default function Comunidade() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const [usuario, setUsuario] = useState<any>(null)
   const [nomeUsuario, setNomeUsuario] = useState("Usuária")

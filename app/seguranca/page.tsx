@@ -11,9 +11,6 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -23,6 +20,8 @@ const nav = [
 ]
 
 function Toggle({ ativo, onChange }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <button onClick={onChange} style={{ width: "44px", height: "24px", borderRadius: "12px", backgroundColor: ativo ? cores.amarelo : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", transition: "background-color 0.2s", flexShrink: 0 }}>
       <div style={{ width: "18px", height: "18px", borderRadius: "50%", backgroundColor: "white", position: "absolute", top: "3px", left: ativo ? "23px" : "3px", transition: "left 0.2s" }} />
@@ -31,6 +30,8 @@ function Toggle({ ativo, onChange }: any) {
 }
 
 function Secao({ icon: Icon, titulo, children, corFundo }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <div style={{ backgroundColor: corFundo || cores.branco, borderRadius: "16px", marginBottom: "16px", overflow: "hidden", boxShadow: "0 1px 4px rgba(90,73,151,0.06)" }}>
       {titulo && (
@@ -45,6 +46,8 @@ function Secao({ icon: Icon, titulo, children, corFundo }: any) {
 }
 
 export default function Seguranca() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const router = useRouter()
   const [usuario, setUsuario] = useState<User | null>(null)

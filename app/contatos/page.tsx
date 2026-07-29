@@ -11,9 +11,6 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -23,6 +20,8 @@ const nav = [
 ]
 
 export default function Contatos() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const router = useRouter()
   const [usuario, setUsuario] = useState<User | null>(null)

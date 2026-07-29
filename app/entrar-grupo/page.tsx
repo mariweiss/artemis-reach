@@ -10,10 +10,9 @@ import { Check, Users } from "lucide-react"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 function EntrarGrupoConteudo() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get("token")

@@ -12,9 +12,6 @@ import dynamic from "next/dynamic"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -27,6 +24,8 @@ const nav = [
 const MapaLeaflet = dynamic(() => import("./MapaLeaflet"), { ssr: false })
 
 export default function Mapa() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const [localizacoes, setLocalizacoes] = useState<any[]>([])
   const [minhaPos, setMinhaPos] = useState<{ lat: number; lng: number } | null>(null)
   const [status, setStatus] = useState("Obtendo localização...")

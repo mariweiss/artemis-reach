@@ -8,9 +8,6 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -20,6 +17,8 @@ const nav = [
 ]
 
 function Toggle({ ativo, onChange, amarelo }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <button onClick={onChange} style={{ width: "44px", height: "24px", borderRadius: "12px", backgroundColor: ativo ? (amarelo ? cores.amarelo : cores.roxo) : "#e5e7eb", border: "none", cursor: "pointer", position: "relative", transition: "background-color 0.2s", flexShrink: 0 }}>
       <div style={{ width: "18px", height: "18px", borderRadius: "50%", backgroundColor: "white", position: "absolute", top: "3px", left: ativo ? "23px" : "3px", transition: "left 0.2s" }} />
@@ -28,6 +27,8 @@ function Toggle({ ativo, onChange, amarelo }: any) {
 }
 
 function Secao({ icon: Icon, titulo, children }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <div style={{ backgroundColor: cores.branco, borderRadius: "16px", marginBottom: "16px", overflow: "hidden", boxShadow: "0 1px 4px rgba(90,73,151,0.06)" }}>
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "10px" }}>
@@ -40,6 +41,8 @@ function Secao({ icon: Icon, titulo, children }: any) {
 }
 
 function Item({ label, desc, ativo, onChange }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: `1px solid ${cores.fundo}` }}>
       <div>
@@ -52,6 +55,8 @@ function Item({ label, desc, ativo, onChange }: any) {
 }
 
 function ItemAcao({ label, desc, onClick }: any) {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <button onClick={onClick} style={{ width: "100%", display: "flex", flexDirection: "column", padding: "14px 20px", background: "none", border: "none", borderBottom: `1px solid ${cores.fundo}`, cursor: "pointer", textAlign: "left" }}>
       <p style={{ margin: 0, fontSize: "14px", color: cores.roxoEscuro }}>{label}</p>
@@ -61,6 +66,8 @@ function ItemAcao({ label, desc, onClick }: any) {
 }
 
 export default function Privacidade() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const [configs, setConfigs] = useState({
     locReal: true, rotasFreq: true, historico: true,

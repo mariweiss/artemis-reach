@@ -10,9 +10,6 @@ import { Shield, Check } from "lucide-react"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 function AceitarConviteInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -20,6 +17,9 @@ function AceitarConviteInner() {
   const [estado, setEstado] = useState("carregando")
   const [convite, setConvite] = useState<any>(null)
   const [usuario, setUsuario] = useState<any>(null)
+
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -140,6 +140,8 @@ function AceitarConviteInner() {
 }
 
 export default function AceitarConvite() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   return (
     <Suspense fallback={
       <div style={{ minHeight: "100vh", backgroundColor: cores.fundo, display: "flex", alignItems: "center", justifyContent: "center" }}>

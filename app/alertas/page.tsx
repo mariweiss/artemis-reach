@@ -16,9 +16,6 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const MiniMapa = dynamic(() => import("./MiniMapaAlerta"), { ssr: false })
 
 const nav = [
@@ -160,6 +157,8 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
 }
 
 export default function Alertas() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const router = useRouter()
   const [usuario, setUsuario] = useState<any>(null)
