@@ -7,8 +7,12 @@ import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { MapPin, Users, MessageSquare, Home, Bell, Volume2, Vibrate, Moon, Globe, HardDrive, HelpCircle, FileText, LogOut, ChevronRight, Info } from "lucide-react"
 import Header from "../componentes/Header"
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
 
-const cores = { fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F", roxoClaro: "#BB99FF", lavanda: "#8575BD", amarelo: "#FDEA72", branco: "#FFFFFF" }
+const { isDark } = useTema()
+const cores = getCores(isDark)
+
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },
@@ -67,6 +71,7 @@ export default function Configuracoes() {
   const [notifs, setNotifs] = useState({ ativo: true, som: true, vibracao: true })
   const [modoEscuro, setModoEscuro] = useState(false)
   const [idioma, setIdioma] = useState("pt-BR")
+  const {isDark, toggleTema} = useTema()
 
   function toggle(key) { setNotifs(prev => ({ ...prev, [key]: !prev[key] })) }
 
@@ -86,7 +91,12 @@ export default function Configuracoes() {
 
         {/* Aparência */}
         <Secao icon={Moon} titulo="Aparência">
-          <ItemToggle label="Modo escuro" desc="Interface com cores claras" ativo={modoEscuro} onChange={() => setModoEscuro(!modoEscuro)} />
+          <ItemToggle
+            label="Modo escuro"
+            desc={isDark ? "Interface com cores escuras ativa" : "Interface com cores claras"}
+            ativo={isDark}
+            onChange={toggleTema}
+          />
         </Secao>
 
         {/* Idioma */}
@@ -108,8 +118,8 @@ export default function Configuracoes() {
 
         {/* Suporte */}
         <Secao icon={HelpCircle} titulo="Suporte e Ajuda">
-          <ItemAcao label="Central de ajuda" desc="Perguntas frequentes e tutoriais" onClick={() => {}} icone={HelpCircle} />
-          <ItemAcao label="Termos de uso" desc="Leia nossos termos e condições" onClick={() => {}} icone={FileText} />
+          <ItemAcao label="Central de ajuda" desc="Perguntas frequentes e tutoriais" onClick={() => { }} icone={HelpCircle} />
+          <ItemAcao label="Termos de uso" desc="Leia nossos termos e condições" onClick={() => { }} icone={FileText} />
           <div style={{ padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <p style={{ margin: 0, fontSize: "14px", color: cores.roxoEscuro }}>Versão do aplicativo</p>
             <p style={{ margin: 0, fontSize: "13px", color: cores.lavanda }}>v2.4.1 (Build 245)</p>

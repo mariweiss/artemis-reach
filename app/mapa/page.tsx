@@ -9,15 +9,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Header from "../componentes/Header"
 import dynamic from "next/dynamic"
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
 
-const cores = {
-  fundo: "#EEEAF8",
-  roxo: "#5A4997",
-  roxoEscuro: "#2F195F",
-  roxoClaro: "#BB99FF",
-  lavanda: "#8575BD",
-  branco: "#FFFFFF",
-}
+const { isDark } = useTema()
+const cores = getCores(isDark)
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },

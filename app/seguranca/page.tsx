@@ -8,7 +8,12 @@ import Link from "next/link"
 import { MapPin, Users, MessageSquare, Home, Bell, Shield, Fingerprint, Key, AlertCircle, Monitor, Smartphone, Eye, EyeOff, Check, ChevronRight } from "lucide-react"
 import Header from "../componentes/Header"
 
-const cores = { fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F", roxoClaro: "#BB99FF", lavanda: "#8575BD", amarelo: "#FDEA72", branco: "#FFFFFF" }
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
+
+const { isDark } = useTema()
+const cores = getCores(isDark)
+
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },

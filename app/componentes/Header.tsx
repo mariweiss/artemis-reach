@@ -6,14 +6,11 @@ import { auth } from "../firebase"
 import { signOut } from "firebase/auth"
 import { MapPin, X, Smartphone, User, Users, Lock, Shield, Settings, Home } from "lucide-react"
 import Link from "next/link"
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
 
-const cores = {
-  roxo: "#5A4997",
-  roxoEscuro: "#2F195F",
-  roxoClaro: "#BB99FF",
-  fundo: "#EEEAF8",
-  branco: "#FFFFFF",
-}
+const { isDark } = useTema()
+const cores = getCores(isDark)
 
 const menuItens = [
   { icon: Smartphone, label: "Dispositivo Echo", href: "/dispositivo", destaque: true },

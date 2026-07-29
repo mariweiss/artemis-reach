@@ -8,8 +8,12 @@ import { useRouter, usePathname } from "next/navigation"
 import { MapPin, Users, MessageSquare, Home, Bell, Search, Phone, Mail, MoreVertical, UserCheck } from "lucide-react"
 import Link from "next/link"
 import Header from "../componentes/Header"
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
 
-const cores = { fundo: "#EEEAF8", roxo: "#5A4997", roxoEscuro: "#2F195F", roxoClaro: "#BB99FF", lavanda: "#8575BD", branco: "#FFFFFF", amarelo: "#FDEA72" }
+const { isDark } = useTema()
+const cores = getCores(isDark)
+
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
   { icon: MapPin, label: "Mapa", href: "/mapa" },

@@ -7,11 +7,11 @@ import { onAuthStateChanged } from "firebase/auth"
 import { collection, query, where, getDocs, addDoc, updateDoc, doc } from "firebase/firestore"
 import { Shield, Check } from "lucide-react"
 
-const cores = {
-  fundo: "#EEEAF8", roxo: "#5A4997",
-  roxoEscuro: "#2F195F", roxoClaro: "#BB99FF",
-  lavanda: "#8575BD", branco: "#FFFFFF",
-}
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
+
+const { isDark } = useTema()
+const cores = getCores(isDark)
 
 function AceitarConviteInner() {
   const searchParams = useSearchParams()
