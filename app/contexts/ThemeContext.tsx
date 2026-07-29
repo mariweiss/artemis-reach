@@ -18,20 +18,26 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [tema, setTema] = useState<Theme>("light")
+  const [montado, setMontado] = useState(false)
 
   useEffect(() => {
-    const salvo = localStorage.getItem("artemis-tema") as Theme
-    if (salvo) setTema(salvo)
+    setMontado(true)
+    try {
+      const salvo = localStorage.getItem("artemis-tema") as Theme
+      if (salvo === "dark" || salvo === "light") setTema(salvo)
+    } catch {}
   }, [])
 
   function toggleTema() {
     const novo: Theme = tema === "light" ? "dark" : "light"
     setTema(novo)
-    localStorage.setItem("artemis-tema", novo)
+    try {
+      localStorage.setItem("artemis-tema", novo)
+    } catch {}
   }
 
   return (
-    <ThemeContext.Provider value={{ tema, toggleTema, isDark: tema === "dark" }}>
+    <ThemeContext.Provider value={{ tema, toggleTema, isDark: montado && tema === "dark" }}>
       {children}
     </ThemeContext.Provider>
   )
