@@ -9,9 +9,6 @@ import Link from "next/link"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 
-const { isDark } = useTema()
-const cores = getCores(isDark)
-
 const menuItens = [
   { icon: Smartphone, label: "Dispositivo Echo", href: "/dispositivo", destaque: true },
   { icon: User, label: "Perfil", href: "/perfil" },
@@ -22,6 +19,8 @@ const menuItens = [
 ]
 
 export default function Header() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const [menuAberto, setMenuAberto] = useState(false)
   const router = useRouter()
   const [hoveredItem, setHoveredItem] = useState<number | null>(null)
