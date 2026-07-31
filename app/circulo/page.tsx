@@ -16,12 +16,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Header from "../componentes/Header"
-
-const cores = {
-  fundo: "#EEEAF8", fundoCard: "#F5F2FC",
-  roxo: "#5A4997", roxoEscuro: "#2F195F",
-  roxoClaro: "#BB99FF", lavanda: "#8575BD", branco: "#FFFFFF",
-}
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -34,6 +30,8 @@ const nav = [
 const CORES_GRUPOS = ["#5A4997", "#e11d48", "#0891b2", "#16a34a", "#d97706", "#7c3aed"]
 
 export default function Circulo() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const pathname = usePathname()
   const router = useRouter()
   const [usuario, setUsuario] = useState<any>(null)
