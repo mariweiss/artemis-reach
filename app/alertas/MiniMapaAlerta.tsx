@@ -27,7 +27,7 @@ export default function MiniMapaAlerta({ lat, lng }: { lat: number; lng: number 
     <MapContainer
       center={[lat, lng]}
       zoom={15}
-      style={{ width: "100%", height: "130px", borderRadius: "12px", zIndex: 1 }}
+      style={{ width: "100%", height: "130px", borderRadius: "12px", zIndex: 0, position: "relative" }}
       zoomControl={false}
       dragging={false}
       scrollWheelZoom={false}
