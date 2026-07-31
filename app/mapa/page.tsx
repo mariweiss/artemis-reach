@@ -57,24 +57,36 @@ export default function Mapa() {
     return () => unsub()
   }, [usuarioId])
 
-  useEffect(() => {
-    if (!usuarioId) return
-    if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
-    const watchId = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords
-        setMinhaPos({ lat: latitude, lng: longitude })
-        setStatus("Localização em tempo real ativa")
+useEffect(() => {
+  if (!usuarioId) return
+  if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
+  const watchId = navigator.geolocation.watchPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords
+      setMinhaPos({ lat: latitude, lng: longitude })
+      setStatus("Localização em tempo real ativa")
+
+      // Verifica se a usuária permite compartilhar localização
+      const perfilSnap = await getDoc(doc(db, "usuarios", usuarioId))
+      const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
+
+      if (compartilha) {
         await setDoc(doc(db, "localizacoes", usuarioId), {
           usuario_id: usuarioId, latitude, longitude,
           atualizado_em: new Date().toISOString()
         })
-      },
-      () => setStatus("Permissão de localização negada"),
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-    return () => navigator.geolocation.clearWatch(watchId)
-  }, [usuarioId])
+      } else {
+        // Remove a localização se desativou o compartilhamento
+        const { deleteDoc } = await import("firebase/firestore")
+        try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch {}
+      }
+    },
+    () => setStatus("Permissão de localização negada"),
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
+
+  return () => navigator.geolocation.clearWatch(watchId)
+}, [usuarioId])
 
   useEffect(() => {
     if (!usuarioId) return
