@@ -208,7 +208,7 @@ export default function Mapa() {
         boxShadow: "0 2px 8px rgba(90,73,151,0.06)"
       }}>
         <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: status.includes("ativa") ? "#22c55e" : "#f97316" }} />
-        <span style={{ fontSize: "13px", color: "#666" }}>{status}</span>
+        <span style={{ fontSize: "13px", color: cores.texto }}>{status}</span>
         {localizacoes.length > 0 && (
           <span style={{ fontSize: "12px", color: cores.roxo, marginLeft: "auto" }}>
             {localizacoes.length} pessoa{localizacoes.length > 1 ? "s" : ""} visível{localizacoes.length > 1 ? "is" : ""}

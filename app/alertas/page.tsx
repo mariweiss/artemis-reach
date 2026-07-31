@@ -95,7 +95,7 @@ function CardAlerta({ alerta, meu, nomes, resolverAlerta, cores }: any) {
 
       {/* Mensagem */}
       {mensagemExibida && (
-        <p style={{ margin: "0 0 10px", fontSize: "13px", color: "#555", lineHeight: "1.5" }}>
+        <p style={{ margin: "0 0 10px", fontSize: "13px", color: cores.texto, lineHeight: "1.5" }}>
           {mensagemExibida}
         </p>
       )}

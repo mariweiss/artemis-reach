@@ -393,7 +393,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
               </span>
             </div>
 
-            <p style={{ margin: "0 0 10px", fontSize: "14px", lineHeight: "1.6", color: "#333" }}>{post.texto}</p>
+            <p style={{ margin: "0 0 10px", fontSize: "14px", lineHeight: "1.6", color: cores.texto }}>{post.texto}</p>
 
             <div style={{ display: "flex", gap: "12px", paddingTop: "10px", borderTop: `1px solid ${cores.fundo}`, alignItems: "center" }}>
               <button onClick={() => confirmar(post.id, jaConfirmou)} style={{ display: "flex", alignItems: "center", gap: "5px", background: "none", border: "none", cursor: "pointer", color: jaConfirmou ? "#16a34a" : cores.lavanda, fontSize: "12px", padding: 0 }}>
@@ -412,7 +412,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 {(comentarios[post.id] || []).map((c: any) => (
                   <div key={c.id} style={{ backgroundColor: cores.fundo, borderRadius: "10px", padding: "8px 12px", marginBottom: "8px" }}>
                     <p style={{ margin: "0 0 2px", fontWeight: "600", fontSize: "12px", color: cores.roxoEscuro }}>{c.nome}</p>
-                    <p style={{ margin: 0, fontSize: "13px", color: "#444" }}>{c.texto}</p>
+                    <p style={{ margin: 0, fontSize: "13px", color: cores.texto }}>{c.texto}</p>
                   </div>
                 ))}
                 <div style={{ display: "flex", gap: "8px" }}>
