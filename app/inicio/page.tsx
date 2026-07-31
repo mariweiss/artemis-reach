@@ -197,14 +197,6 @@ export default function Inicio() {
           backgroundColor: "rgba(34,197,94,0.1)", padding: "8px 16px",
           borderRadius: "20px", border: "1px solid rgba(34,197,94,0.2)"
         }}>
-          <div style={{
-            width: "8px", height: "8px", borderRadius: "50%",
-            backgroundColor: "#22c55e", boxShadow: "0 0 6px rgba(34,197,94,0.6)"
-          }} />
-          <span style={{ color: "#16a34a", fontSize: "13px", fontWeight: "500" }}>
-            Você está em uma área segura
-          </span>
-        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 24px" }}>
