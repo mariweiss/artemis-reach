@@ -192,12 +192,6 @@ export default function Inicio() {
         <h2 style={{ color: cores.roxoEscuro, fontSize: "22px", fontWeight: "800", margin: "0 0 12px" }}>
           {nomeUsuario}
         </h2>
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: "8px",
-          backgroundColor: "rgba(34,197,94,0.1)", padding: "8px 16px",
-          borderRadius: "20px", border: "1px solid rgba(34,197,94,0.2)"
-        }}>
-        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 24px" }}>
