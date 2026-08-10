@@ -49,6 +49,26 @@ export default function Circulo() {
   const [copiado, setCopiado] = useState(false)
   const [carregando, setCarregando] = useState(true)
   const [abaAtiva, setAbaAtiva] = useState("grupos")
+  const [presencas, setPresencas] = useState<any>({})
+
+  useEffect(() => {
+    if (!usuario) return
+    const unsub = onSnapshot(collection(db, "presenca"), (snap) => {
+      const dados: any = {}
+      snap.docs.forEach(d => {
+        dados[d.id] = d.data().ultimo_online
+      })
+      setPresencas(dados)
+    })
+    return () => unsub()
+  }, [usuario])
+
+  function estaOnline(usuarioId: string) {
+    const ultimo = presencas[usuarioId]
+    if (!ultimo) return false
+    const diff = Date.now() - new Date(ultimo).getTime()
+    return diff < 2 * 60 * 1000 // online se ativo nos últimos 2 minutos
+  }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -425,8 +445,16 @@ export default function Circulo() {
               <div key={conexao.id} style={{ backgroundColor: cores.branco, borderRadius: "16px", padding: "16px", marginBottom: "12px", boxShadow: "0 1px 6px rgba(90,73,151,0.07)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.roxoClaro, display: "flex", alignItems: "center", justifyContent: "center", color: cores.roxoEscuro, fontWeight: "bold", fontSize: "16px" }}>
-                      {conexao.nome?.charAt(0).toUpperCase()}
+                    <div style={{ position: "relative" }}>
+                      <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.roxoClaro, display: "flex", alignItems: "center", justifyContent: "center", color: cores.roxoEscuro, fontWeight: "bold", fontSize: "16px" }}>
+                        {conexao.nome?.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{
+                        position: "absolute", bottom: "2px", right: "2px",
+                        width: "12px", height: "12px", borderRadius: "50%",
+                        backgroundColor: estaOnline(conexao.outroId) ? "#22c55e" : "#bbb",
+                        border: `2px solid ${cores.branco}`
+                      }} />
                     </div>
                     <div>
                       <p style={{ margin: 0, fontWeight: "600", fontSize: "15px", color: cores.roxoEscuro }}>{conexao.nome}</p>

@@ -10,6 +10,8 @@ import Link from "next/link"
 import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
+import { usePresenca } from "../hooks/usePresenca"
+
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -35,6 +37,8 @@ export default function Inicio() {
   const holdTimer = useRef<any>(null)
   const progressTimer = useRef<any>(null)
   const contagemTimer = useRef<any>(null)
+
+  usePresenca()
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
