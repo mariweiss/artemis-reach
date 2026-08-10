@@ -316,7 +316,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "80px", right: "24px", zIndex: 3000 }}>
+      <div style={{ position: "fixed", bottom: "100px", right: "24px", zIndex: 3000 }}>
         <button
           onClick={() => ativarSOSRapido()}
           style={{
