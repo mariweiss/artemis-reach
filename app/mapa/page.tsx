@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { collection, onSnapshot, doc, setDoc, query, where, getDoc } from "firebase/firestore"
-import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X } from "lucide-react"
+import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X, Route } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Header from "../componentes/Header"
@@ -382,14 +382,14 @@ export default function Mapa() {
       )}
 
       {/* Botão histórico de rota */}
-      <div style={{ position: "fixed", bottom: "196px", right: "24px", zIndex: 999 }}>
+      <div style={{ position: "fixed", bottom: "196px", right: "30px", zIndex: 999 }}>
         <button onClick={carregarRotaHoje} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: mostrarRota ? cores.roxo : cores.branco,
           border: "none", display: "flex", alignItems: "center", justifyContent: "center",
           cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
         }}>
-          <Navigation size={20} color={mostrarRota ? "white" : cores.roxo} />
+          <Route size={20} color={mostrarRota ? "white" : cores.roxo} />
         </button>
       </div>
 
