@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
@@ -74,7 +74,7 @@ function CentralizarMapa({ pos, ativo }: { pos: { lat: number; lng: number } | n
   return null
 }
 
-export default function MapaLeaflet({ minhaPos, localizacoes, centralizar }: { minhaPos: any; localizacoes: any[]; centralizar: boolean }) {
+export default function MapaLeaflet({ minhaPos, localizacoes, centralizar, pontosRota }: { minhaPos: any; localizacoes: any[]; centralizar: boolean; pontosRota?: any[] }) {
   const centro = minhaPos || { lat: -22.9068, lng: -43.1729 }
 
   return (
@@ -106,6 +106,12 @@ export default function MapaLeaflet({ minhaPos, localizacoes, centralizar }: { m
           )}
         />
       ))}
+      {pontosRota && pontosRota.length > 1 && (
+        <Polyline
+          positions={pontosRota.map(p => [p.lat, p.lng])}
+          pathOptions={{ color: "#5A4997", weight: 4, opacity: 0.7 }}
+        />
+      )}
     </MapContainer>
   )
 }

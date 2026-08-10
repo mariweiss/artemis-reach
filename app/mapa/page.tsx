@@ -38,6 +38,8 @@ export default function Mapa() {
   const [modalSOS, setModalSOS] = useState(false)
   const [contadorSOS, setContadorSOS] = useState<number | null>(null)
   const contadorRef = useRef<any>(null)
+  const [mostrarRota, setMostrarRota] = useState(false)
+  const [pontosRota, setPontosRota] = useState<any[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -57,36 +59,49 @@ export default function Mapa() {
     return () => unsub()
   }, [usuarioId])
 
-useEffect(() => {
-  if (!usuarioId) return
-  if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
-  const watchId = navigator.geolocation.watchPosition(
-    async (pos) => {
-      const { latitude, longitude } = pos.coords
-      setMinhaPos({ lat: latitude, lng: longitude })
-      setStatus("Localização em tempo real ativa")
+  useEffect(() => {
+    if (!usuarioId) return
+    if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords
+        setMinhaPos({ lat: latitude, lng: longitude })
+        setStatus("Localização em tempo real ativa")
 
-      // Verifica se a usuária permite compartilhar localização
-      const perfilSnap = await getDoc(doc(db, "usuarios", usuarioId))
-      const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
+        // Verifica se a usuária permite compartilhar localização
+        const perfilSnap = await getDoc(doc(db, "usuarios", usuarioId))
+        const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
 
-      if (compartilha) {
-        await setDoc(doc(db, "localizacoes", usuarioId), {
-          usuario_id: usuarioId, latitude, longitude,
-          atualizado_em: new Date().toISOString()
-        })
-      } else {
-        // Remove a localização se desativou o compartilhamento
-        const { deleteDoc } = await import("firebase/firestore")
-        try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch {}
-      }
-    },
-    () => setStatus("Permissão de localização negada"),
-    { enableHighAccuracy: true, timeout: 10000 }
-  )
+        if (compartilha) {
+          await setDoc(doc(db, "localizacoes", usuarioId), {
+            usuario_id: usuarioId, latitude, longitude,
+            atualizado_em: new Date().toISOString()
+          })
 
-  return () => navigator.geolocation.clearWatch(watchId)
-}, [usuarioId])
+          // Salva ponto no histórico de rotas (se ativado)
+          const salvarHistorico = perfilSnap.data()?.privacidade?.historico !== false
+          if (salvarHistorico) {
+            const hoje = new Date().toISOString().split("T")[0]
+            const { addDoc, collection: col } = await import("firebase/firestore")
+            await addDoc(col(db, "historico_rotas"), {
+              usuario_id: usuarioId,
+              latitude,
+              longitude,
+              data: hoje,
+              timestamp: new Date().toISOString()
+            })
+          }
+        } else {
+          const { deleteDoc } = await import("firebase/firestore")
+          try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch { }
+        }
+      },
+      () => setStatus("Permissão de localização negada"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [usuarioId])
 
   useEffect(() => {
     if (!usuarioId) return
@@ -145,6 +160,30 @@ useEffect(() => {
 
     return () => unsubCirculo()
   }, [usuarioId, grupos, gruposSelecionados])
+
+  async function carregarRotaHoje() {
+    if (!usuarioId) return
+    if (mostrarRota) {
+      setMostrarRota(false)
+      setPontosRota([])
+      return
+    }
+    const hoje = new Date().toISOString().split("T")[0]
+    const { collection: col, query: q2, where: w2, orderBy: ob, getDocs } = await import("firebase/firestore")
+    const consulta = q2(
+      col(db, "historico_rotas"),
+      w2("usuario_id", "==", usuarioId),
+      w2("data", "==", hoje),
+      ob("timestamp", "asc")
+    )
+    const snap = await getDocs(consulta)
+    const pontos = snap.docs.map(d => {
+      const data = d.data()
+      return { lat: data.latitude, lng: data.longitude }
+    })
+    setPontosRota(pontos)
+    setMostrarRota(true)
+  }
 
   function toggleGrupo(grupoId: string) {
     setGruposSelecionados((prev) => {
@@ -230,7 +269,7 @@ useEffect(() => {
 
       {/* Mapa Leaflet */}
       <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>
-        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} />
+        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []}/>
       </div>
 
       {/* Botão centralizar */}
@@ -341,6 +380,18 @@ useEffect(() => {
           </div>
         </>
       )}
+
+      {/* Botão histórico de rota */}
+      <div style={{ position: "fixed", bottom: "196px", right: "24px", zIndex: 999 }}>
+        <button onClick={carregarRotaHoje} style={{
+          width: "44px", height: "44px", borderRadius: "50%",
+          backgroundColor: mostrarRota ? cores.roxo : cores.branco,
+          border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
+        }}>
+          <Navigation size={20} color={mostrarRota ? "white" : cores.roxo} />
+        </button>
+      </div>
 
       {/* Modal grupos */}
       {modalGrupos && (
