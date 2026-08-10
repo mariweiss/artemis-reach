@@ -293,7 +293,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão grupos */}
-      <div style={{ position: "fixed", bottom: "135px", right: "24px", zIndex: 999 }}>
+      <div style={{ position: "fixed", bottom: "144px", right: "24px", zIndex: 999 }}>
         <button onClick={() => setModalGrupos(true)} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -390,7 +390,7 @@ export default function Mapa() {
       )}
 
       {/* Botão histórico de rota */}
-      <div style={{ position: "fixed", bottom: "196px", right: "30px", zIndex: 999 }}>
+      <div style={{ position: "fixed", bottom: "144px", left: "24px", zIndex: 999 }}>
         <button onClick={carregarRotaHoje} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: mostrarRota ? cores.roxo : cores.branco,
