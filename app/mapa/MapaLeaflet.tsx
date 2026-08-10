@@ -79,7 +79,6 @@ export default function MapaLeaflet({ minhaPos, localizacoes, centralizar, ponto
 
   return (
     <MapContainer
-      key={`${centro.lat}-${centro.lng}`}
       center={[centro.lat, centro.lng]}
       zoom={15}
       style={{ width: "100%", height: "100%", zIndex: 0 }}
