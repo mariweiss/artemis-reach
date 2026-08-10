@@ -262,7 +262,7 @@ export default function Mapa() {
         <span style={{ fontSize: "13px", color: cores.texto }}>{status}</span>
         {localizacoes.length > 0 && (
           <span style={{ fontSize: "12px", color: cores.roxo, marginLeft: "auto" }}>
-            {localizacoes.length} pessoa{localizacoes.length > 1 ? "s" : ""} visível{localizacoes.length > 1 ? "is" : ""}
+            {localizacoes.length} {localizacoes.length > 1 ? "pessoas visíveis" : "pessoa visível"}
           </span>
         )}
       </div>
