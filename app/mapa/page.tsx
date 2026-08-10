@@ -269,7 +269,15 @@ export default function Mapa() {
 
       {/* Mapa Leaflet */}
       <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>
-        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []}/>
+        {minhaPos ? (
+          <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []} />
+        ) : (
+          <div style={{ width: "100%", height: "calc(100vh - 170px)", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: cores.fundo, flexDirection: "column", gap: "12px" }}>
+            <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: `3px solid ${cores.roxo}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+            <p style={{ color: cores.textoSecundario, fontSize: "14px" }}>Obtendo sua localização...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
       </div>
 
       {/* Botão centralizar */}
