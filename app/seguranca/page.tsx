@@ -233,26 +233,25 @@ export default function Seguranca() {
       <NavBar nav={nav} pathname={pathname} cores={cores} />
     </div>
 
-  )
-  {
-    modalTeste && (
-      <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-        <div style={{ backgroundColor: cores.branco, borderRadius: "20px", padding: "32px", maxWidth: "360px", width: "100%", textAlign: "center" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", animation: "pulse-teste 1s ease-in-out infinite" }}>
-            <Bell size={32} color="#ef4444" />
+      {modalTeste && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <div style={{ backgroundColor: cores.branco, borderRadius: "20px", padding: "32px", maxWidth: "360px", width: "100%", textAlign: "center" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", animation: "pulse-teste 1s ease-in-out infinite" }}>
+              <Bell size={32} color="#ef4444" />
+            </div>
+            <h3 style={{ color: cores.texto, margin: "0 0 8px", fontSize: "18px" }}>Teste de Alerta SOS</h3>
+            <p style={{ color: cores.textoSecundario, fontSize: "14px", margin: "0 0 20px" }}>
+              Este é um teste. Em uma emergência real, seu círculo receberia sua localização e seria notificado imediatamente.
+            </p>
+            <button onClick={() => setModalTeste(false)} style={{ width: "100%", padding: "14px", backgroundColor: cores.roxo, color: isDark ? cores.fundo : "white", border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+              Entendi
+            </button>
           </div>
-          <h3 style={{ color: cores.texto, margin: "0 0 8px", fontSize: "18px" }}>Teste de Alerta SOS</h3>
-          <p style={{ color: cores.textoSecundario, fontSize: "14px", margin: "0 0 20px" }}>
-            Este é um teste. Em uma emergência real, seu círculo receberia sua localização e seria notificado imediatamente.
-          </p>
-          <button onClick={() => setModalTeste(false)} style={{ width: "100%", padding: "14px", backgroundColor: cores.roxo, color: isDark ? cores.fundo : "white", border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
-            Entendi
-          </button>
+          <style>{`@keyframes pulse-teste { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`}</style>
         </div>
-        <style>{`@keyframes pulse-teste { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`}</style>
-      </div>
-    )
-  }
+      )}
+    </div>
+  )
 }
 
 function NavBar({ nav, pathname, cores }) {
