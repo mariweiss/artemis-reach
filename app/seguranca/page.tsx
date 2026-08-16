@@ -230,9 +230,7 @@ export default function Seguranca() {
         </div>
       )}
 
-      <NavBar nav={nav} pathname={pathname} cores={cores} />
-    </div>
-
+      {/* Modal teste SOS */}
       {modalTeste && (
         <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
           <div style={{ backgroundColor: cores.branco, borderRadius: "20px", padding: "32px", maxWidth: "360px", width: "100%", textAlign: "center" }}>
@@ -250,6 +248,8 @@ export default function Seguranca() {
           <style>{`@keyframes pulse-teste { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`}</style>
         </div>
       )}
+
+      <NavBar nav={nav} pathname={pathname} cores={cores} />
     </div>
   )
 }
