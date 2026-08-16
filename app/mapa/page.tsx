@@ -22,7 +22,6 @@ const nav = [
 
 // Leaflet só funciona no browser, então carregamos dinamicamente
 const MapaLeaflet = dynamic(() => import("./MapaLeaflet"), { ssr: false })
-const ultimoSalvoRef = useRef<number>(0)
 
 export default function Mapa() {
   const { isDark } = useTema()
@@ -41,6 +40,7 @@ export default function Mapa() {
   const contadorRef = useRef<any>(null)
   const [mostrarRota, setMostrarRota] = useState(false)
   const [pontosRota, setPontosRota] = useState<any[]>([])
+  const ultimoSalvoRef = useRef<number>(0)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
