@@ -22,6 +22,7 @@ const nav = [
 
 // Leaflet só funciona no browser, então carregamos dinamicamente
 const MapaLeaflet = dynamic(() => import("./MapaLeaflet"), { ssr: false })
+const ultimoSalvoRef = useRef<number>(0)
 
 export default function Mapa() {
   const { isDark } = useTema()
@@ -78,9 +79,11 @@ export default function Mapa() {
             atualizado_em: new Date().toISOString()
           })
 
-          // Salva ponto no histórico de rotas (se ativado)
+          // Salva ponto no histórico de rotas (se ativado, a cada 30s)
           const salvarHistorico = perfilSnap.data()?.privacidade?.historico !== false
-          if (salvarHistorico) {
+          const agora = Date.now()
+          if (salvarHistorico && (agora - ultimoSalvoRef.current > 30000)) {
+            ultimoSalvoRef.current = agora
             const hoje = new Date().toISOString().split("T")[0]
             const { addDoc, collection: col } = await import("firebase/firestore")
             await addDoc(col(db, "historico_rotas"), {
@@ -95,6 +98,7 @@ export default function Mapa() {
           const { deleteDoc } = await import("firebase/firestore")
           try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch { }
         }
+
       },
       () => setStatus("Permissão de localização negada"),
       { enableHighAccuracy: true, timeout: 10000 }
@@ -247,6 +251,25 @@ export default function Mapa() {
       })
     })
   }
+
+  async function limparRotasAntigas() {
+    if (!usuarioId) return
+    const hoje = new Date().toISOString().split("T")[0]
+    const { collection: col, query: q2, where: w2, getDocs, deleteDoc, doc: d2 } = await import("firebase/firestore")
+
+    try {
+      const consulta = q2(
+        col(db, "historico_rotas"),
+        w2("usuario_id", "==", usuarioId),
+        w2("data", "!=", hoje)
+      )
+      const snap = await getDocs(consulta)
+      await Promise.all(snap.docs.map(ponto => deleteDoc(d2(db, "historico_rotas", ponto.id))))
+    } catch { }
+  }
+  useEffect(() => {
+    if (usuarioId) limparRotasAntigas()
+  }, [usuarioId])
 
   return (
     <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo }}>
