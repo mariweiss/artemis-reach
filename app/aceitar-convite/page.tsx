@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, query, where, getDocs, addDoc, updateDoc, doc } from "firebase/firestore"
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc } from "firebase/firestore"
 import { Shield, Check } from "lucide-react"
 
 import { useTema } from "../contexts/ThemeContext"
@@ -47,6 +47,15 @@ function AceitarConviteInner() {
 
   async function aceitar() {
     if (!convite || !usuario) return
+
+    // Verifica se permite convites
+    const perfilSnap = await getDoc(doc(db, "usuarios", usuario.uid))
+    const permiteConvites = perfilSnap.data()?.privacidade?.convites !== false
+    if (!permiteConvites) {
+      alert("Você desativou convites para círculo nas configurações de privacidade.")
+      return
+    }
+
     await addDoc(collection(db, "circulos"), {
       usuarios: [convite.criador_id, usuario.uid],
       status: "confirmado",

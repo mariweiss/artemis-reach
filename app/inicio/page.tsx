@@ -41,7 +41,7 @@ export default function Inicio() {
       try {
         const snap = await getDoc(doc(db, "usuarios", user.uid))
         if (snap.exists()) setNomeUsuario(snap.data().nome?.split(" ")[0] || "Usuária")
-      } catch {}
+      } catch { }
     })
     return () => unsub()
   }, [])
@@ -70,6 +70,16 @@ export default function Inicio() {
 
   async function enviarSOS() {
     setContando(false)
+
+    // Verifica se o botão SOS está ativado nas configurações
+    const perfilSnap = await getDoc(doc(db, "usuarios", usuario?.uid || ""))
+    const sosAtivado = perfilSnap.data()?.seguranca?.sosAtivo !== false
+    if (!sosAtivado) {
+      alert("O botão SOS está desativado nas configurações de segurança.")
+      setContador(5)
+      return
+    }
+
     navigator.geolocation?.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords
       await addDoc(collection(db, "alertas_sos"), {
@@ -108,7 +118,7 @@ export default function Inicio() {
         navigator.share({
           title: "Minha localização",
           text: mensagem,
-        }).catch(() => {})
+        }).catch(() => { })
       } else {
         // Fallback: WhatsApp
         window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, "_blank")

@@ -242,6 +242,18 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   const [filtroTipo, setFiltroTipo] = useState("todos")
 
   useEffect(() => {
+    if (!usuario) return
+    async function carregarPref() {
+      const { getDoc, doc } = await import("firebase/firestore")
+      const snap = await getDoc(doc(db, "usuarios", usuario.uid))
+      if (snap.data()?.privacidade?.anonimo) {
+        setAnonimo(true)
+      }
+    }
+    carregarPref()
+  }, [usuario])
+
+  useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("criado_em", "desc"))
     const unsub = onSnapshot(q, (snap) => {
       const dados = snap.docs.map(d => {

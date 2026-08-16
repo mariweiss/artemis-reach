@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { auth } from "../firebase"
+import { auth, db } from "../firebase"
 import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWithCredential, signOut, User } from "firebase/auth"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
@@ -58,11 +58,20 @@ export default function Seguranca() {
   const [mostrar, setMostrar] = useState(false)
   const [msg, setMsg] = useState("")
   const [salvando, setSalvando] = useState(false)
+  const [modalTeste, setModalTeste] = useState(false)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.push("/"); return }
       setUsuario(user)
+      // Carrega configs salvas
+      try {
+        const { getDoc, doc } = await import("firebase/firestore")
+        const snap = await getDoc(doc(db, "usuarios", user.uid))
+        if (snap.exists() && snap.data().seguranca) {
+          setConfigs(prev => ({ ...prev, ...snap.data().seguranca }))
+        }
+      } catch { }
     })
     return () => unsub()
   }, [])
@@ -83,6 +92,22 @@ export default function Seguranca() {
     } catch { setMsg("Senha atual incorreta.") }
     setSalvando(false)
     setTimeout(() => setMsg(""), 3000)
+  }
+
+  async function salvarSeguranca() {
+    if (!usuario) return
+    setSalvando(true)
+    try {
+      const { setDoc, doc } = await import("firebase/firestore")
+      await setDoc(doc(db, "usuarios", usuario.uid), {
+        seguranca: configs
+      }, { merge: true })
+      setMsg("Configurações salvas!")
+      setTimeout(() => setMsg(""), 2000)
+    } catch {
+      setMsg("Erro ao salvar.")
+    }
+    setSalvando(false)
   }
 
   const ultimaAlteracao = usuario?.metadata?.lastSignInTime
@@ -142,7 +167,7 @@ export default function Seguranca() {
               <Toggle ativo={configs[item.key]} onChange={() => toggle(item.key)} />
             </div>
           ))}
-          <button style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "rgba(239,68,68,0.04)", border: "none", cursor: "pointer" }}>
+          <button onClick={() => setModalTeste(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "rgba(239,68,68,0.04)", border: "none", cursor: "pointer" }}>
             <div style={{ textAlign: "left" }}>
               <p style={{ margin: 0, fontSize: "14px", color: "#dc2626" }}>Testar Alerta SOS</p>
               <p style={{ margin: "2px 0 0", fontSize: "12px", color: cores.lavanda }}>Simula um alerta sem notificar contatos</p>
@@ -175,8 +200,8 @@ export default function Seguranca() {
 
         {msg && <p style={{ textAlign: "center", color: msg.includes("incorreta") ? "#ef4444" : "#16a34a", fontSize: "13px", marginBottom: "12px" }}>{msg}</p>}
 
-        <button style={{ width: "100%", padding: "14px", backgroundColor: cores.roxo, color: cores.branco, border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
-          Salvar Configurações
+        <button onClick={salvarSeguranca} disabled={salvando} style={{ width: "100%", padding: "14px", backgroundColor: cores.roxo, color: isDark ? cores.fundo : cores.branco, border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+          {salvando ? "Salvando..." : "Salvar Configurações"}
         </button>
       </div>
 
@@ -207,7 +232,27 @@ export default function Seguranca() {
 
       <NavBar nav={nav} pathname={pathname} cores={cores} />
     </div>
+
   )
+  {
+    modalTeste && (
+      <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+        <div style={{ backgroundColor: cores.branco, borderRadius: "20px", padding: "32px", maxWidth: "360px", width: "100%", textAlign: "center" }}>
+          <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", animation: "pulse-teste 1s ease-in-out infinite" }}>
+            <Bell size={32} color="#ef4444" />
+          </div>
+          <h3 style={{ color: cores.texto, margin: "0 0 8px", fontSize: "18px" }}>Teste de Alerta SOS</h3>
+          <p style={{ color: cores.textoSecundario, fontSize: "14px", margin: "0 0 20px" }}>
+            Este é um teste. Em uma emergência real, seu círculo receberia sua localização e seria notificado imediatamente.
+          </p>
+          <button onClick={() => setModalTeste(false)} style={{ width: "100%", padding: "14px", backgroundColor: cores.roxo, color: isDark ? cores.fundo : "white", border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+            Entendi
+          </button>
+        </div>
+        <style>{`@keyframes pulse-teste { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`}</style>
+      </div>
+    )
+  }
 }
 
 function NavBar({ nav, pathname, cores }) {
