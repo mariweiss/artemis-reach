@@ -1,17 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { auth, db } from "../firebase"
-import { onAuthStateChanged, User } from "firebase/auth"
-import { doc, getDoc, collection, addDoc } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
+import { doc, getDoc, addDoc, collection } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
-import { MapPin, Users, MessageSquare, Home, Bell, Shield, Phone, Bluetooth, Volume2, Navigation, X } from "lucide-react"
 import Link from "next/link"
+import { MapPin, Users, MessageSquare, Home, Bell, Phone, Share2, AlertCircle, VolumeX, Volume2 } from "lucide-react"
 import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 import { usePresenca } from "../hooks/usePresenca"
-
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -22,344 +21,218 @@ const nav = [
 ]
 
 export default function Inicio() {
-  const { isDark } = useTema()
-  const cores = getCores(isDark)
   const pathname = usePathname()
   const router = useRouter()
-  const [usuario, setUsuario] = useState<User | null>(null)
-  const [nomeUsuario, setNomeUsuario] = useState("")
-  const [sosAtivo, setSosAtivo] = useState(false)
-  const [contagem, setContagem] = useState<number | null>(null)
-  const [alertaEnviado, setAlertaEnviado] = useState(false)
-  const [modoSilencioso, setModoSilencioso] = useState(false)
-  const [pressionando, setPressionando] = useState(false)
-  const [progressoHold, setProgressoHold] = useState(0)
-  const holdTimer = useRef<any>(null)
-  const progressTimer = useRef<any>(null)
-  const contagemTimer = useRef<any>(null)
-
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   usePresenca()
+
+  const [usuario, setUsuario] = useState<any>(null)
+  const [nomeUsuario, setNomeUsuario] = useState("")
+  const [modoSilencioso, setModoSilencioso] = useState(false)
+  const [contando, setContando] = useState(false)
+  const [contador, setContador] = useState(5)
+  const [alertaEnviado, setAlertaEnviado] = useState(false)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.push("/"); return }
       setUsuario(user)
       try {
-        const docSnap = await getDoc(doc(db, "usuarios", user.uid))
-        if (docSnap.exists()) {
-          setNomeUsuario(docSnap.data().nome?.split(" ")[0] || "Usuária")
-        } else {
-          setNomeUsuario(user.email?.split("@")[0] || "Usuária")
-        }
-      } catch {
-        setNomeUsuario("Usuária")
-      }
+        const snap = await getDoc(doc(db, "usuarios", user.uid))
+        if (snap.exists()) setNomeUsuario(snap.data().nome?.split(" ")[0] || "Usuária")
+      } catch {}
     })
     return () => unsub()
   }, [])
 
-
-  useEffect(() => () => {
-    clearTimeout(holdTimer.current)
-    clearInterval(progressTimer.current)
-    clearInterval(contagemTimer.current)
-  }, [])
-
-  function toqueSimples() {
-    if (sosAtivo || alertaEnviado) return
-    let c = 3
-    setContagem(c)
-    contagemTimer.current = setInterval(() => {
-      c--
-      setContagem(c)
-      if (c <= 0) {
-        clearInterval(contagemTimer.current)
-        setContagem(null)
-        ativarSOS()
-      }
-    }, 1000)
-  }
-
-  function cancelarContagem() {
-    if (contagemTimer.current) {
-      clearInterval(contagemTimer.current)
-      setContagem(null)
+  // Contagem regressiva
+  useEffect(() => {
+    if (!contando) return
+    if (contador <= 0) {
+      enviarSOS()
+      return
     }
-  }
+    const t = setTimeout(() => setContador(contador - 1), 1000)
+    return () => clearTimeout(t)
+  }, [contando, contador])
 
-  function iniciarHold() {
-    if (sosAtivo || alertaEnviado) return
-    setPressionando(true)
-    setProgressoHold(0)
-    let prog = 0
-    progressTimer.current = setInterval(() => {
-      prog += 3.33
-      setProgressoHold(Math.min(prog, 100))
-    }, 100)
-    holdTimer.current = setTimeout(() => {
-      clearInterval(progressTimer.current)
-      setProgressoHold(100)
-      setPressionando(false)
-      ativarSOS()
-    }, 3000)
-  }
-
-  function soltarHold() {
-    if (holdTimer.current) clearTimeout(holdTimer.current)
-    if (progressTimer.current) clearInterval(progressTimer.current)
-    setPressionando(false)
-    setProgressoHold(0)
-  }
-
-  async function ativarSOS() {
-    setSosAtivo(true)
-    navigator.geolocation?.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords
-        await addDoc(collection(db, "alertas_sos"), {
-          usuario_id: usuario?.uid || "anonimo",
-          origem: "app",
-          latitude,
-          longitude,
-          modo_silencioso: modoSilencioso,
-          mensagem: `${nomeUsuario} acionou o botão SOS!`,
-          ativo: true,
-          criado_em: new Date().toISOString()
-        })
-      },
-      async () => {
-        // Salva mesmo sem GPS
-        await addDoc(collection(db, "alertas_sos"), {
-          usuario_id: usuario?.uid || "anonimo",
-          origem: "app",
-          modo_silencioso: modoSilencioso,
-          mensagem: `${nomeUsuario} acionou o botão SOS!`,
-          ativo: true,
-          criado_em: new Date().toISOString()
-        })
-      }
-    )
-    setTimeout(() => setAlertaEnviado(true), 500)
-  }
-
-  function tocarSirene() {
-    try {
-      const ctx = new AudioContext()
-      const duracao = 3
-      for (let i = 0; i < duracao * 4; i++) {
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.frequency.setValueAtTime(880, ctx.currentTime + i * 0.25)
-        osc.frequency.setValueAtTime(660, ctx.currentTime + i * 0.25 + 0.125)
-        gain.gain.setValueAtTime(0.5, ctx.currentTime + i * 0.25)
-        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.25 + 0.24)
-        osc.start(ctx.currentTime + i * 0.25)
-        osc.stop(ctx.currentTime + i * 0.25 + 0.25)
-      }
-    } catch (e) {
-      console.error("Erro ao tocar sirene:", e)
-    }
-  }
-
-  function resetarSOS() {
-    setSosAtivo(false)
+  function iniciarSOS() {
+    setContando(true)
+    setContador(5)
     setAlertaEnviado(false)
-    setContagem(null)
-    setProgressoHold(0)
   }
 
-  if (!usuario) return (
-    <div style={{
-      minHeight: "100vh", backgroundColor: cores.fundo,
-      display: "flex", alignItems: "center", justifyContent: "center"
-    }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          width: "48px", height: "48px", borderRadius: "50%",
-          border: `3px solid ${cores.roxo}`, borderTopColor: "transparent",
-          animation: "spin 0.8s linear infinite", margin: "0 auto 16px"
-        }} />
-        <p style={{ color: cores.lavanda, fontSize: "14px" }}>Carregando...</p>
-      </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
+  function cancelarSOS() {
+    setContando(false)
+    setContador(5)
+  }
+
+  async function enviarSOS() {
+    setContando(false)
+    navigator.geolocation?.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords
+      await addDoc(collection(db, "alertas_sos"), {
+        usuario_id: usuario?.uid,
+        origem: "app",
+        latitude,
+        longitude,
+        ativo: true,
+        mensagem: `${nomeUsuario} ativou o botão SOS!`,
+        modo_silencioso: modoSilencioso,
+        criado_em: new Date().toISOString()
+      })
+      setAlertaEnviado(true)
+    }, async () => {
+      await addDoc(collection(db, "alertas_sos"), {
+        usuario_id: usuario?.uid,
+        origem: "app",
+        ativo: true,
+        mensagem: `${nomeUsuario} ativou o botão SOS!`,
+        modo_silencioso: modoSilencioso,
+        criado_em: new Date().toISOString()
+      })
+      setAlertaEnviado(true)
+    })
+    setContador(5)
+  }
+
+  function compartilharLocalizacao() {
+    navigator.geolocation?.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords
+      const link = `https://maps.google.com/?q=${latitude},${longitude}`
+      const mensagem = `Estou compartilhando minha localização em tempo real pelo Artemis: ${link}`
+
+      if (navigator.share) {
+        // Compartilhamento nativo (celular)
+        navigator.share({
+          title: "Minha localização",
+          text: mensagem,
+        }).catch(() => {})
+      } else {
+        // Fallback: WhatsApp
+        window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, "_blank")
+      }
+    }, () => {
+      alert("Não foi possível obter sua localização.")
+    })
+  }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: cores.fundo, fontFamily: "sans-serif", paddingBottom: "80px" }}>
+    <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo, minHeight: "100vh" }}>
       <Header />
+      <div style={{ maxWidth: "500px", margin: "0 auto", padding: "24px 16px 120px", display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-      <div style={{ padding: "20px 24px 0" }}>
-        <p style={{ color: cores.lavanda, fontSize: "13px", margin: "0 0 2px" }}>Olá,</p>
-        <h2 style={{ color: cores.roxoEscuro, fontSize: "22px", fontWeight: "800", margin: "0 0 12px" }}>
-          {nomeUsuario}
+        <h2 style={{ fontSize: "22px", fontWeight: "700", color: cores.texto, margin: "0 0 4px", textAlign: "center" }}>
+          Olá, {nomeUsuario || "Usuária"}!
         </h2>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 24px" }}>
-        <div style={{ position: "relative", marginBottom: "20px" }}>
-          {(sosAtivo || pressionando) && [1, 2].map(i => (
-            <div key={i} style={{
-              position: "absolute", top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: `${180 + i * 50}px`, height: `${180 + i * 50}px`,
-              borderRadius: "50%", border: "2px solid rgba(239,68,68,0.25)",
-              animation: `pulse-ring ${0.9 + i * 0.3}s ease-out infinite`,
-              animationDelay: `${i * 0.2}s`
-            }} />
-          ))}
-
-          {pressionando && (
-            <svg style={{
-              position: "absolute", top: "50%", left: "50%",
-              transform: "translate(-50%, -50%)", width: "200px", height: "200px"
-            }} viewBox="0 0 200 200">
-              <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(239,68,68,0.15)" strokeWidth="4" />
-              <circle cx="100" cy="100" r="90" fill="none" stroke="#ef4444" strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 90}`}
-                strokeDashoffset={`${2 * Math.PI * 90 * (1 - progressoHold / 100)}`}
-                transform="rotate(-90 100 100)"
-                style={{ transition: "stroke-dashoffset 0.1s linear" }}
-              />
-            </svg>
-          )}
-
-          <button
-            onClick={contagem !== null ? cancelarContagem : toqueSimples}
-            onMouseDown={iniciarHold}
-            onMouseUp={soltarHold}
-            onTouchStart={iniciarHold}
-            onTouchEnd={soltarHold}
-            style={{
-              width: "180px", height: "180px", borderRadius: "50%",
-              background: "radial-gradient(circle at 35% 35%, #ff6b6b, #dc2626)",
-              border: "6px solid white", cursor: "pointer",
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(239,68,68,0.25)",
-              transform: pressionando ? "scale(0.96)" : "scale(1)",
-              transition: "transform 0.1s", position: "relative", zIndex: 1
-            }}
-          >
-            <Shield size={36} color="white" strokeWidth={1.5} />
-            <span style={{ color: "white", fontSize: "22px", fontWeight: "800", letterSpacing: "3px", marginTop: "8px" }}>
-              {contagem !== null ? contagem : "SOS"}
-            </span>
-          </button>
-        </div>
-
-        <p style={{ color: cores.lavanda, fontSize: "13px", textAlign: "center", maxWidth: "280px", lineHeight: "1.6" }}>
-          {alertaEnviado
-            ? "✓ Alerta enviado com sucesso"
-            : contagem !== null
-              ? "Toque para cancelar"
-              : "Pressione e segure em emergência. Seus contatos serão notificados imediatamente."}
+        <p style={{ color: cores.textoSecundario, fontSize: "14px", marginBottom: "40px", textAlign: "center" }}>
+          Sua segurança em um toque
         </p>
+
+        {/* Botão SOS central */}
+        <div style={{ position: "relative", marginBottom: "40px" }}>
+          {!contando ? (
+            <button onClick={iniciarSOS} style={{
+              width: "200px", height: "200px", borderRadius: "50%",
+              backgroundColor: "#ef4444", border: "none", cursor: "pointer",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: "8px", boxShadow: "0 8px 32px rgba(239,68,68,0.4)",
+              animation: "pulse-sos 2s ease-in-out infinite"
+            }}>
+              <AlertCircle size={56} color="white" />
+              <span style={{ color: "white", fontSize: "28px", fontWeight: "800", letterSpacing: "2px" }}>SOS</span>
+              <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "12px" }}>Toque para acionar</span>
+            </button>
+          ) : (
+            <button onClick={cancelarSOS} style={{
+              width: "200px", height: "200px", borderRadius: "50%",
+              backgroundColor: "#dc2626", border: "6px solid white", cursor: "pointer",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: "4px", boxShadow: "0 8px 32px rgba(239,68,68,0.6)"
+            }}>
+              <span style={{ color: "white", fontSize: "64px", fontWeight: "800" }}>{contador}</span>
+              <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "14px", fontWeight: "600" }}>Toque para cancelar</span>
+            </button>
+          )}
+        </div>
 
         {alertaEnviado && (
           <div style={{
-            backgroundColor: cores.branco, borderRadius: "16px",
-            padding: "16px", width: "100%", maxWidth: "340px", marginTop: "16px",
-            boxShadow: "0 2px 12px rgba(90,73,151,0.1)",
-            border: "1px solid rgba(239,68,68,0.2)"
+            backgroundColor: "rgba(34,197,94,0.1)", borderRadius: "14px",
+            padding: "14px 20px", marginBottom: "24px",
+            border: "1px solid rgba(34,197,94,0.3)", textAlign: "center"
           }}>
-            {[
-              { label: "Alerta enviado", status: "✓ Confirmado", cor: "#16a34a" },
-              { label: "Localização", status: "✓ Compartilhada", cor: "#16a34a" },
-              { label: "Contatos notificados", status: "Aguardando...", cor: cores.roxo },
-            ].map((item, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: i < 2 ? "10px" : 0 }}>
-                <span style={{ color: cores.lavanda, fontSize: "13px" }}>{item.label}</span>
-                <span style={{ color: item.cor, fontSize: "13px", fontWeight: "600" }}>{item.status}</span>
-              </div>
-            ))}
-            <button onClick={resetarSOS} style={{
-              width: "100%", marginTop: "14px", padding: "10px",
-              backgroundColor: cores.fundo, color: cores.roxo,
-              border: `1px solid ${cores.roxoClaro}`, borderRadius: "10px",
-              cursor: "pointer", fontSize: "13px", fontWeight: "600"
-            }}>
-              Cancelar alerta
-            </button>
+            <p style={{ margin: 0, color: "#16a34a", fontWeight: "600", fontSize: "14px" }}>
+              ✓ Alerta enviado ao seu círculo!
+            </p>
           </div>
         )}
-      </div>
 
-      {!alertaEnviado && (
-        <div style={{ padding: "0 24px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-            {[
-              { icon: <Navigation size={18} color={cores.roxo} />, label: "Compartilhar rota", vermelho: false, acao: () => { } },
-              { icon: <Phone size={18} color="white" />, label: "Ligar 190", vermelho: true, acao: () => window.open("tel:190") },
-              { icon: <Bluetooth size={18} color={cores.roxo} />, label: "Dispositivo Echo", vermelho: false, acao: () => { } },
-              { icon: <Volume2 size={18} color={cores.roxo} />, label: "Sirene sonora", vermelho: false, acao: tocarSirene },
-            ].map((item, i) => (
-              <button key={i} onClick={item.acao} style={{
-                backgroundColor: item.vermelho ? "rgba(239,68,68,0.1)" : cores.branco,
-                border: `1px solid ${item.vermelho ? "rgba(239,68,68,0.3)" : "rgba(90,73,151,0.15)"}`,
-                borderRadius: "14px", padding: "14px 16px",
-                display: "flex", alignItems: "center", gap: "10px",
-                cursor: "pointer", boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
-              }}>
-                {item.icon}
-                <span style={{ color: item.vermelho ? "#dc2626" : cores.roxoEscuro, fontSize: "13px", fontWeight: "500" }}>
-                  {item.label}
-                </span>
-              </button>
-            ))}
-          </div>
+        {/* Modo silencioso */}
+        <button onClick={() => setModoSilencioso(!modoSilencioso)} style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          backgroundColor: modoSilencioso ? cores.roxo : cores.branco,
+          color: modoSilencioso ? (isDark ? cores.fundo : "white") : cores.texto,
+          border: `1.5px solid ${modoSilencioso ? cores.roxo : cores.borda}`,
+          borderRadius: "20px", padding: "10px 20px", cursor: "pointer",
+          fontSize: "13px", fontWeight: "600", marginBottom: "32px"
+        }}>
+          {modoSilencioso ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          Modo silencioso {modoSilencioso ? "ativo" : "inativo"}
+        </button>
 
-          <button onClick={() => setModoSilencioso(!modoSilencioso)} style={{
-            width: "100%", padding: "14px",
-            backgroundColor: modoSilencioso ? `rgba(90,73,151,0.15)` : cores.branco,
-            border: `1px solid ${modoSilencioso ? cores.roxo : "rgba(90,73,151,0.15)"}`,
-            borderRadius: "14px", color: modoSilencioso ? cores.roxo : cores.lavanda,
-            fontSize: "14px", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            fontWeight: modoSilencioso ? "600" : "400",
-            boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
+        {/* Botões de ação */}
+        <div style={{ display: "flex", gap: "12px", width: "100%" }}>
+          {/* Ligar 190 */}
+          <a href="tel:190" style={{
+            flex: 1, padding: "16px", borderRadius: "16px",
+            backgroundColor: cores.branco, textDecoration: "none",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
+            boxShadow: "0 2px 8px " + cores.sombra,
+            border: "1px solid " + cores.borda
           }}>
-            <Shield size={16} />
-            {modoSilencioso ? "Modo Silencioso ativo" : "Modo Silencioso"}
+            <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "rgba(239,68,68,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Phone size={22} color="#ef4444" />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: cores.texto }}>Ligar 190</span>
+          </a>
+
+          {/* Compartilhar localização */}
+          <button onClick={compartilharLocalizacao} style={{
+            flex: 1, padding: "16px", borderRadius: "16px",
+            backgroundColor: cores.branco, cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: "8px",
+            boxShadow: "0 2px 8px " + cores.sombra,
+            border: "1px solid " + cores.borda
+          }}>
+            <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "rgba(90,73,151,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Share2 size={22} color={cores.roxo} />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: "600", color: cores.texto }}>Compartilhar localização</span>
           </button>
         </div>
-      )}
+      </div>
 
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
-        backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
-        display: "flex", justifyContent: "space-around",
-        padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)"
-      }}>
+      {/* Navbar */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, backgroundColor: cores.branco, borderTop: "1px solid " + cores.fundo, display: "flex", justifyContent: "space-around", padding: "10px 0", boxShadow: "0 -2px 12px " + cores.sombra, zIndex: 1000 }}>
         {nav.map((item) => {
           const ativo = pathname === item.href
           return (
-            <Link key={item.label} href={item.href} style={{
-              display: "flex", flexDirection: "column",
-              alignItems: "center", gap: "4px",
-              textDecoration: "none", color: ativo ? cores.roxo : "#aaa",
-            }}>
-              <div style={{
-                padding: "6px 16px", borderRadius: "12px",
-                backgroundColor: ativo ? `rgba(90,73,151,0.1)` : "transparent"
-              }}>
+            <Link key={item.label} href={item.href} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", textDecoration: "none", color: ativo ? cores.roxo : cores.textoSecundario }}>
+              <div style={{ padding: "6px 16px", borderRadius: "12px", backgroundColor: ativo ? "rgba(90,73,151,0.1)" : "transparent" }}>
                 <item.icon size={20} />
               </div>
-              <span style={{ fontSize: "10px", fontWeight: ativo ? "600" : "400" }}>
-                {item.label}
-              </span>
+              <span style={{ fontSize: "10px", fontWeight: ativo ? "600" : "400" }}>{item.label}</span>
             </Link>
           )
         })}
       </div>
 
       <style>{`
-        @keyframes pulse-ring {
-          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        @keyframes pulse-sos {
+          0%, 100% { box-shadow: 0 8px 32px rgba(239,68,68,0.4); }
+          50% { box-shadow: 0 8px 42px rgba(239,68,68,0.7); }
         }
       `}</style>
     </div>
