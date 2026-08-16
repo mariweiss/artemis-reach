@@ -25,6 +25,7 @@ export default function Privacidade() {
   const { isDark } = useTema()
   const cores = getCores(isDark)
 
+  const [limpando, setLimpando] = useState(false)
   const [usuario, setUsuario] = useState<any>(null)
   const [configs, setConfigs] = useState({
     locReal: true,
@@ -47,7 +48,7 @@ export default function Privacidade() {
         if (snap.exists() && snap.data().privacidade) {
           setConfigs(prev => ({ ...prev, ...snap.data().privacidade }))
         }
-      } catch {}
+      } catch { }
     })
     return () => unsub()
   }, [])
@@ -103,6 +104,28 @@ export default function Privacidade() {
     )
   }
 
+  async function limparHistorico() {
+    if (!usuario) return
+    const confirmado = window.confirm("Deseja mesmo apagar todo o seu histórico de localização? Esta ação não pode ser desfeita.")
+    if (!confirmado) return
+
+    setLimpando(true)
+    try {
+      const { collection, query, where, getDocs, deleteDoc, doc: d2 } = await import("firebase/firestore")
+      const consulta = query(
+        collection(db, "historico_rotas"),
+        where("usuario_id", "==", usuario.uid)
+      )
+      const snap = await getDocs(consulta)
+      await Promise.all(snap.docs.map(ponto => deleteDoc(d2(db, "historico_rotas", ponto.id))))
+      setMsg("Histórico de localização apagado!")
+      setTimeout(() => setMsg(""), 2500)
+    } catch {
+      setMsg("Erro ao limpar histórico.")
+    }
+    setLimpando(false)
+  }
+
   return (
     <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo, minHeight: "100vh" }}>
       <Header />
@@ -120,6 +143,21 @@ export default function Privacidade() {
           <Item label="Mostrar status online" desc="Seu círculo pode ver quando você está online" ativo={configs.statusOnline} onChange={() => toggle("statusOnline")} />
           <Item label="Permitir convites para círculo" desc="Outras usuárias podem te convidar" ativo={configs.convites} onChange={() => toggle("convites")} />
           <Item label="Publicações anônimas por padrão" desc="Suas publicações na comunidade serão anônimas" ativo={configs.anonimo} onChange={() => toggle("anonimo")} />
+        </Secao>
+
+        <Secao icon={Shield} titulo="Gerenciamento de Dados">
+          <button onClick={limparHistorico} disabled={limpando} style={{
+            width: "100%", display: "flex", flexDirection: "column",
+            padding: "14px 20px", background: "none", border: "none",
+            borderBottom: "1px solid " + cores.fundo, cursor: "pointer", textAlign: "left"
+          }}>
+            <p style={{ margin: 0, fontSize: "14px", color: cores.texto }}>
+              {limpando ? "Limpando..." : "Limpar histórico de localização"}
+            </p>
+            <p style={{ margin: "2px 0 0", fontSize: "12px", color: cores.textoSecundario }}>
+              Remove todos os registros de localizações anteriores
+            </p>
+          </button>
         </Secao>
 
         {msg && <p style={{ textAlign: "center", color: msg.includes("Erro") ? "#ef4444" : "#16a34a", fontSize: "13px", marginBottom: "12px" }}>{msg}</p>}
