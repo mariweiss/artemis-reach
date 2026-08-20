@@ -108,6 +108,7 @@ export default function Inicio() {
 
           setEnviandoSOS(false)
           setAlertaEnviado(true)
+          setContador(5)
         } catch (error) {
           console.error("Erro ao enviar SOS:", error)
           setEnviandoSOS(false)
@@ -127,6 +128,7 @@ export default function Inicio() {
 
           setEnviandoSOS(false)
           setAlertaEnviado(true)
+          setContador(5)
         } catch (error) {
           console.error("Erro ao enviar SOS:", error)
           setEnviandoSOS(false)
@@ -179,7 +181,6 @@ export default function Inicio() {
 
         {/* Botão SOS central */}
         <div style={{ position: "relative", marginBottom: "40px" }}>
-
           {!contando && !enviandoSOS ? (
             <button onClick={iniciarSOS} style={{
               width: "200px", height: "200px", borderRadius: "50%",
@@ -189,51 +190,22 @@ export default function Inicio() {
               animation: "pulse-sos 2s ease-in-out infinite"
             }}>
               <AlertCircle size={56} color="white" />
-
-              <span style={{
-                color: "white",
-                fontSize: "28px",
-                fontWeight: "800",
-                letterSpacing: "2px"
-              }}>
-                SOS
-              </span>
-
-              <span style={{
-                color: "rgba(255,255,255,0.9)",
-                fontSize: "12px"
-              }}>
-                Toque para acionar
-              </span>
+              <span style={{ color: "white", fontSize: "28px", fontWeight: "800", letterSpacing: "2px" }}>SOS</span>
+              <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "12px" }}>Toque para acionar</span>
             </button>
-
           ) : contando ? (
-
             <button onClick={cancelarSOS} style={{
               width: "200px", height: "200px", borderRadius: "50%",
               backgroundColor: "#dc2626", border: "6px solid white", cursor: "pointer",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               gap: "4px", boxShadow: "0 8px 32px rgba(239,68,68,0.6)"
             }}>
-              <span style={{
-                color: "white",
-                fontSize: "64px",
-                fontWeight: "800"
-              }}>
-                {contador}
-              </span>
-
-              <span style={{
-                color: "rgba(255,255,255,0.9)",
-                fontSize: "14px",
-                fontWeight: "600"
-              }}>
+              <span style={{ color: "white", fontSize: "64px", fontWeight: "800" }}>{contador}</span>
+              <span style={{ color: "rgba(255,255,255,0.9)", fontSize: "14px", fontWeight: "600" }}>
                 Toque para cancelar
               </span>
             </button>
-
           ) : (
-
             <div style={{
               width: "200px",
               height: "200px",
@@ -244,7 +216,7 @@ export default function Inicio() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: "10px",
+              gap: "8px",
               boxShadow: "0 8px 32px rgba(239,68,68,0.6)"
             }}>
               <AlertCircle size={48} color="white" />
@@ -264,7 +236,6 @@ export default function Inicio() {
                 Aguarde um momento
               </span>
             </div>
-
           )}
         </div>
 
