@@ -64,6 +64,8 @@ export default function Mapa() {
   useEffect(() => {
   if (!usuarioId) return
 
+  const uid = usuarioId
+
   let pararRastreamento: any = null
 
   async function iniciar() {
@@ -77,12 +79,12 @@ export default function Mapa() {
         setStatus("Localização em tempo real ativa")
 
         // Verifica se a usuária permite compartilhar
-        const perfilSnap = await getDoc(doc(db, "usuarios", usuarioId))
+        const perfilSnap = await getDoc(doc(db, "usuarios", uid))
         const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
 
         if (compartilha) {
-          await setDoc(doc(db, "localizacoes", usuarioId), {
-            usuario_id: usuarioId, latitude, longitude,
+          await setDoc(doc(db, "localizacoes", uid), {
+            usuario_id: uid, latitude, longitude,
             atualizado_em: new Date().toISOString()
           })
 
@@ -94,13 +96,13 @@ export default function Mapa() {
             const hoje = new Date().toISOString().split("T")[0]
             const { addDoc, collection: col } = await import("firebase/firestore")
             await addDoc(col(db, "historico_rotas"), {
-              usuario_id: usuarioId, latitude, longitude,
+              usuario_id: uid, latitude, longitude,
               data: hoje, timestamp: new Date().toISOString()
             })
           }
         } else {
           const { deleteDoc } = await import("firebase/firestore")
-          try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch {}
+          try { await deleteDoc(doc(db, "localizacoes", uid)) } catch {}
         }
       },
       () => setStatus("Permissão de localização negada")
