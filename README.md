@@ -75,3 +75,81 @@ app/
 ├── perfil/ # Perfil do usuário
 └── configuracoes/ # Configurações
 
+## 🔄 Como atualizar o projeto no GitHub
+
+### Fluxo básico (salvar mudanças)
+
+```bash
+# 1. Adiciona todos os arquivos modificados
+git add .
+
+# 2. Cria um commit com uma descrição do que mudou
+git commit -m "descrição da mudança"
+
+# 3. Envia para o GitHub
+git push origin main
+```
+
+### Trabalhando com branches
+
+```bash
+# Ver em qual branch você está
+git branch
+
+# Criar uma nova branch (ex: para testar algo)
+git checkout -b nome-da-branch
+
+# Mudar de branch
+git checkout main
+
+# Enviar uma branch para o GitHub
+git push origin nome-da-branch
+```
+
+### Juntar uma branch com a main
+
+```bash
+# 1. Vai para a main
+git checkout main
+
+# 2. Junta a outra branch
+git merge nome-da-branch
+
+# 3. Envia para o GitHub
+git push origin main
+```
+
+### Baixar atualizações do GitHub
+
+```bash
+# Baixa as mudanças mais recentes
+git pull origin main
+```
+
+### Exemplos de mensagens de commit
+
+```bash
+git commit -m "adiciona modo escuro"
+git commit -m "corrige bug no mapa"
+git commit -m "atualiza tela de alertas"
+git commit -m "feat: implementa chat individual"
+git commit -m "fix: resolve erro de deploy no Vercel"
+```
+
+### Atualizar o app após mudanças
+
+```bash
+# Gera o app com as mudanças novas
+npm run build:app
+
+# Abre no Android Studio
+npm run abrir:app
+```
+
+### Deploy do site
+
+O deploy no Vercel é **automático**. Ao fazer `git push origin main`, o Vercel detecta e atualiza o site sozinho em alguns minutos.
+
+```
+git push origin main → Vercel faz deploy automático
+```
