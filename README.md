@@ -1,217 +1,77 @@
-# 📍 🌙Ártemis Reach
+# 🛡️ Artemis
 
-O **Ártemis Reach** é uma plataforma desenvolvida para aumentar a segurança pessoal, permitindo o compartilhamento de localização em tempo real, o acionamento rápido de contatos de confiança e a colaboração entre usuárias por meio de uma comunidade de alertas.
+**Aplicativo de segurança pessoal feminina** com localização em tempo real, botão SOS, círculo de confiança e comunidade colaborativa.
 
----
+## 📱 Sobre o projeto
 
-## 🛠️ Tecnologias utilizadas
+Artemis é uma solução tecnológica que conecta mulheres a uma rede de confiança, permitindo acionar ajuda rapidamente em situações de perigo e compartilhar informações de segurança.
 
-| Tecnologia | Descrição |
-|---|---|
-| **Next.js** | Framework React para o site |
-| **React** | Biblioteca de interface |
-| **Tailwind CSS** | Estilização |
-| **Firebase** | Banco de dados e autenticação |
-| **TypeScript** | Linguagem principal |
-
----
-
-## ✅ Pré-requisitos
-
-Antes de começar, instale na sua máquina (o que você não tiver):
-
-| Ferramenta | Link |
-|---|---|
-| **Node.js** (versão LTS) | https://nodejs.org |
-| **Git** | https://git-scm.com/download/win |
-| **VS Code** | https://code.visualstudio.com |
-
----
+Desenvolvido como projeto acadêmico para a **FETIN 2026**.
 
 ## ✨ Funcionalidades
 
-- ✅ Cadastro e autenticação de usuários
-- 📍 Compartilhamento de localização em tempo real
-- 🚨 Botão SOS
-- 👥 Círculo de contatos de confiança
-- 🗺️ Mapa interativo
-- 📝 Comunidade para relatos de ocorrências
-- 🔔 Sistema de notificações
-- 📡 Integração com dispositivo ESP32
+- 🆘 **Botão SOS** — aciona alerta com localização em tempo real
+- 🗺️ **Mapa em tempo real** — acompanhe a localização do seu círculo
+- 👥 **Círculo de confiança** — grupos e contatos individuais
+- 💬 **Comunidade** — chat entre grupos e feed público por cidade
+- 🔔 **Alertas** — receba avisos do seu círculo instantaneamente
+- 📡 **Dispositivo Artemis Echo** — botão físico SOS via Bluetooth
+- 🌙 **Modo escuro**
+- 📍 **Histórico de rotas**
+- 🔒 **Configurações de privacidade e segurança**
 
----
+## 🛠️ Tecnologias
 
-## 👩‍💻 Equipe
+**Frontend**
+- Next.js 16
+- React 18
+- TypeScript
+- Tailwind CSS
 
-- Mariana Bissaro Weiss
-- Giovanna Gama Fernandino
-- Maria Eduarda Silva Sousa
+**Backend**
+- Firebase Authentication
+- Firebase Firestore
 
-## 📥 Como baixar o projeto
+**Mapas**
+- Leaflet + OpenStreetMap
 
-**1. Clone o repositório**
+**App Mobile**
+- Capacitor (Android)
+- Background Geolocation
 
-Abra o terminal e rode:
+**Dispositivo IoT**
+- ESP32-C3
+- Bluetooth Low Energy (BLE)
+- NimBLE
 
-```bash
-git clone https://github.com/mariweiss/artemis-reach.git
-cd artemis-reach
-```
+## 🚀 Como rodar
 
-**2. Instale as dependências**
-
+### Site (desenvolvimento)
 ```bash
 npm install
-```
-
-**3. Configure as variáveis de ambiente**
-
-Crie um arquivo chamado `.env.local` na raiz do projeto.
-
-> ⚠️ **Importante:** Esse arquivo **não está no GitHub** por segurança. Peça as chaves para a Mariana pelo WhatsApp do grupo.
-
-O arquivo deve ficar assim:
-
-```
-NEXT_PUBLIC_FIREBASE_API_KEY=sua-chave-aqui
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=artemis-reach.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=artemis-reach
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=artemis-reach.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=seu-id-aqui
-NEXT_PUBLIC_FIREBASE_APP_ID=seu-app-id-aqui
-NEXT_PUBLIC_GOOGLE_MAPS_KEY=sua-chave-aqui
-```
-
-**4. Rode o projeto**
-
-```bash
 npm run dev
 ```
 
-Abra o navegador em **http://localhost:3000** 🚀
-
----
-
-## 📁 Estrutura do projeto
-
-```
-artemis-reach/
-├── app/
-│   ├── firebase.js           → configuração do Firebase
-│   ├── page.tsx              → página de login/cadastro
-│   ├── inicio/
-│   │   └── page.tsx          → botoes de acesso rapido
-│   ├── comunidade/
-│   │   └── page.tsx          → feed da comunidade
-│   ├── circulo/
-│   │   └── page.tsx          → círculo de contatos
-│   └── mapa/
-│   │   └── page.tsx          → mapa em tempo real
-│   ├── alertas/
-│   │   └── page.tsx          → notificacoes
-├── .env.local                → credenciais (NÃO vai pro GitHub)
-├── .gitignore
-└── README.md
-```
-
----
-
-## 🗄️ Banco de dados (Firebase)
-
-| Coleção | Descrição |
-|---|---|
-| `usuarios` | Cadastro e perfil dos usuários |
-| `circulos` | Rede de contatos de cada usuário |
-| `localizacoes` | Coordenadas GPS em tempo real |
-| `rotas` | Histórico de trajetos frequentes |
-| `posts` | Feed da comunidade |
-| `respostas` | Comentários nos posts |
-| `alertas_sos` | Alertas de emergência |
-| `dispositivos` | Dispositivos GPS físicos vinculados |
-
----
-
-## 📄 Páginas do site
-
-| Rota | Descrição |
-|---|---|
-| `/` | Login e cadastro |
-| `/inicio` | Bootões de acesso rápido |
-| `/comunidade` | Feed de posts da comunidade |
-| `/circulo` | Lista de contatos do círculo |
-| `/mapa` | Mapa com localização em tempo real |
-| `/benefícios e parceiros` | Feed de organizações parceiras |
-| `/alertas` | Lista de notificações |
-
----
-
-## 🔄 Como atualizar o projeto (dia a dia)
-
-Sempre **antes de começar a trabalhar**, atualize o projeto:
-
+### App Android
 ```bash
-git pull origin main
+npm run build:app
+npm run abrir:app
 ```
 
-Depois de fazer alterações, suba para o GitHub:
+## 🌐 Deploy
 
-```bash
-git add .
-git commit -m "descrição do que você fez"
-git push origin main
-```
+Site disponível em: [artemis-reach.vercel.app](https://artemis-reach.vercel.app)
 
-=======
-## 📱 Acessar o site pelo celular (localhost)
+## 📂 Estrutura
 
-Você pode testar o site no celular mesmo sem publicar, desde que o celular e o computador estejam na **mesma rede Wi-Fi**.
+app/
+├── page.tsx # Login e cadastro
+├── inicio/ # Tela inicial com SOS
+├── mapa/ # Mapa em tempo real
+├── circulo/ # Grupos e contatos
+├── comunidade/ # Chat e feed
+├── alertas/ # Alertas recebidos
+├── dispositivo/ # Conexão Bluetooth
+├── perfil/ # Perfil do usuário
+└── configuracoes/ # Configurações
 
-### Passo 1 — Descubra o IP do seu computador
-
-No terminal do VS Code, rode:
-
-```bash
-ipconfig
-```
-
-Procure por **"Endereço IPv4"** — vai ser algo como: XXX.XXX.X.X
-
-### Passo 2 — Rode o projeto
-
-No terminal, rode normalmente:
-
-```bash
-npm run dev
-```
-
-Quando iniciar, vai aparecer:
-- Local:    http://localhost:3000
-- Network:  http://XXX.XXX.X.X:3000  ← esse é o endereço do celular
-
-### Passo 3 — Acesse pelo celular
-
-No navegador do celular (Chrome ou Safari), acesse: http://XXX.XXX.X.X:3000 
-
-### Passo 4 — Libere o firewall (se não abrir)
-
-Se o celular não conseguir acessar, o firewall do Windows pode estar bloqueando. Para liberar:
-1. Pesquise "Firewall do Windows Defender" no menu iniciar
-2. Clique em "Permitir um aplicativo pelo Firewall"
-3. Clique em "Alterar configurações"
-4. Procure "Node.js" na lista
-5. Marque as caixas "Privado" e "Público"
-6. Clique em OK
-
-### ⚠️ Observações importantes
-
-| Situação | Resultado |
-|---|---|
-| GPS no celular | Funciona com precisão total |
-| GPS no computador | Usa Wi-Fi/IP, menos preciso |
-| Envio de SMS (SOS) | Funciona apenas no celular |
-| Sirene sonora | Funciona nos dois |
-| Computador e celular na mesma rede | Obrigatório |
-
-> 💡 O IP pode mudar toda vez que você reconectar ao Wi-Fi. Se parar de funcionar, rode `ipconfig` de novo para pegar o novo endereço.
-
----
