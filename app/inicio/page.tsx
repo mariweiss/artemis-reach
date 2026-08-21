@@ -30,6 +30,7 @@ export default function Inicio() {
   const [usuario, setUsuario] = useState<any>(null)
   const [nomeUsuario, setNomeUsuario] = useState("")
   const [modoSilencioso, setModoSilencioso] = useState(false)
+
   const [contando, setContando] = useState(false)
   const [contador, setContador] = useState(5)
 
@@ -57,7 +58,7 @@ export default function Inicio() {
             snap.data().nome?.split(" ")[0] || "Usuária"
           )
         }
-      } catch { }
+      } catch {}
     })
 
     return () => unsub()
@@ -79,6 +80,22 @@ export default function Inicio() {
 
     return () => clearTimeout(t)
   }, [contando, contador])
+
+  // Depois que o alerta for confirmado pelo Firebase,
+  // mantém a mensagem e o botão de cancelar por 5 minutos.
+  useEffect(() => {
+    if (!alertaEnviado || !sosAtivo) return
+
+    const timer = setTimeout(() => {
+      setAlertaEnviado(false)
+      setSosAtivo(false)
+      setEnviandoSOS(false)
+      setIdAlertaSOS(null)
+      setContador(5)
+    }, 5 * 60 * 1000)
+
+    return () => clearTimeout(timer)
+  }, [alertaEnviado, sosAtivo])
 
   function iniciarSOS() {
     setContando(true)
@@ -140,7 +157,7 @@ export default function Inicio() {
               }
             )
 
-            // Guarda o ID para podermos cancelar depois
+            // Guarda o ID do alerta para poder cancelar
             setIdAlertaSOS(alertaRef.id)
 
             // Firebase confirmou o envio
@@ -165,8 +182,8 @@ export default function Inicio() {
 
         async () => {
           try {
-            // Caso não seja possível obter a localização,
-            // o alerta ainda será enviado sem coordenadas.
+            // Caso a localização não esteja disponível,
+            // o alerta ainda será enviado.
             const alertaRef = await addDoc(
               collection(db, "alertas_sos"),
               {
@@ -179,7 +196,7 @@ export default function Inicio() {
               }
             )
 
-            // Guarda o ID para cancelamento
+            // Guarda o ID para poder cancelar
             setIdAlertaSOS(alertaRef.id)
 
             // Firebase confirmou o envio
@@ -262,13 +279,11 @@ export default function Inicio() {
         `Estou compartilhando minha localização em tempo real pelo Artemis: ${link}`
 
       if (navigator.share) {
-        // Compartilhamento nativo (celular)
         navigator.share({
           title: "Minha localização",
           text: mensagem,
-        }).catch(() => { })
+        }).catch(() => {})
       } else {
-        // Fallback: WhatsApp
         window.open(
           `https://wa.me/?text=${encodeURIComponent(mensagem)}`,
           "_blank"
@@ -331,7 +346,7 @@ export default function Inicio() {
           }}
         >
 
-          {/* ESTADO NORMAL */}
+          {/* Estado normal */}
           {!contando && !enviandoSOS && !sosAtivo ? (
 
             <button
@@ -382,7 +397,7 @@ export default function Inicio() {
 
           ) : contando ? (
 
-            /* CONTAGEM REGRESSIVA */
+            /* Contagem regressiva */
             <button
               onClick={cancelarSOS}
               style={{
@@ -424,7 +439,7 @@ export default function Inicio() {
 
           ) : (
 
-            /* ENVIANDO / SOS ATIVO */
+            /* Enviando / SOS ativo */
             <div
               style={{
                 display: "flex",
