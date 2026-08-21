@@ -28,6 +28,12 @@
             </intent-filter>
 
         </activity>
+        
+        <service
+            android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService"
+            android:enabled="true"
+            android:exported="true"
+            android:foregroundServiceType="location" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

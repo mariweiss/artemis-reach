@@ -6,13 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint", 
+    "lint": "eslint",
     "build:app": "cross-env BUILD_TARGET=app next build && npx cap sync",
     "abrir:app": "npx cap open android"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/android": "^8.5.0",
+    "@capacitor/app-launcher": "^8.0.1",
     "@capacitor/core": "^8.5.0",
     "@capacitor/geolocation": "^8.2.2",
     "@types/leaflet": "^1.9.21",
@@ -32,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",

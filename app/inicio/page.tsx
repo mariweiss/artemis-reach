@@ -22,6 +22,8 @@ import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
 import { usePresenca } from "../hooks/usePresenca"
+import { useLocalizacao } from "../hooks/useLocalizacao"
+import AvisoBateria from "../componentes/AvisoBateria"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -40,6 +42,7 @@ export default function Inicio() {
   const cores = getCores(isDark)
 
   usePresenca()
+  useLocalizacao()
 
   const [usuario, setUsuario] = useState<any>(null)
   const [nomeUsuario, setNomeUsuario] = useState("")
@@ -997,7 +1000,7 @@ export default function Inicio() {
           </button>
         </div>
       </div>
-
+      <AvisoBateria />
       {/* Navbar */}
       <div
         style={{

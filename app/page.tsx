@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { auth, db } from "./firebase"
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
 import { Shield, Smartphone, Bluetooth } from "lucide-react"
@@ -92,6 +92,17 @@ export default function Home() {
   const [erro, setErro] = useState("")
   const [carregando, setCarregando] = useState(false)
   const router = useRouter()
+
+    // Verifica se já está logado
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Já está logado, vai direto para o início
+        router.push("/inicio")
+      }
+    })
+    return () => unsub()
+  }, [])
 
   async function entrar() {
     setErro("")

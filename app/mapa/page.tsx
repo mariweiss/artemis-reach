@@ -51,69 +51,21 @@ export default function Mapa() {
   }, [])
 
   useEffect(() => {
-    if (!usuarioId) return
-    const q = query(collection(db, "grupos"), where("membros", "array-contains", usuarioId))
-    const unsub = onSnapshot(q, (snap) => {
-      const dados = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setGrupos(dados)
-      setGruposSelecionados(new Set(dados.map((g: any) => g.id)))
-    })
-    return () => unsub()
-  }, [usuarioId])
-
-  useEffect(() => {
   if (!usuarioId) return
 
-  const uid = usuarioId
-
-  let pararRastreamento: any = null
+  let parar: any = null
 
   async function iniciar() {
     const { iniciarRastreamento } = await import("../utils/localizacao")
-
-    console.log("É APP NATIVO?", isApp())
-
-    pararRastreamento = await iniciarRastreamento(
-      async (latitude, longitude) => {
-        setMinhaPos({ lat: latitude, lng: longitude })
-        setStatus("Localização em tempo real ativa")
-
-        // Verifica se a usuária permite compartilhar
-        const perfilSnap = await getDoc(doc(db, "usuarios", uid))
-        const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
-
-        if (compartilha) {
-          await setDoc(doc(db, "localizacoes", uid), {
-            usuario_id: uid, latitude, longitude,
-            atualizado_em: new Date().toISOString()
-          })
-
-          // Salva histórico (a cada 30s)
-          const salvarHistorico = perfilSnap.data()?.privacidade?.historico !== false
-          const agora = Date.now()
-          if (salvarHistorico && (agora - ultimoSalvoRef.current > 30000)) {
-            ultimoSalvoRef.current = agora
-            const hoje = new Date().toISOString().split("T")[0]
-            const { addDoc, collection: col } = await import("firebase/firestore")
-            await addDoc(col(db, "historico_rotas"), {
-              usuario_id: uid, latitude, longitude,
-              data: hoje, timestamp: new Date().toISOString()
-            })
-          }
-        } else {
-          const { deleteDoc } = await import("firebase/firestore")
-          try { await deleteDoc(doc(db, "localizacoes", uid)) } catch {}
-        }
-      },
-      () => setStatus("Permissão de localização negada")
-    )
+    parar = await iniciarRastreamento((lat: number, lng: number) => {
+      setMinhaPos({ lat, lng })
+      setStatus("Localização em tempo real ativa")
+    })
   }
 
   iniciar()
 
-  return () => {
-    if (pararRastreamento) pararRastreamento()
-  }
+  return () => { if (parar) parar() }
 }, [usuarioId])
 
   useEffect(() => {
