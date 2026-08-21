@@ -31,6 +31,8 @@ const nav = [
   { icon: Bell, label: "Alertas", href: "/alertas" },
 ]
 
+const TEMPO_SOS = 2 * 60 * 1000
+
 export default function Inicio() {
   const pathname = usePathname()
   const router = useRouter()
@@ -52,6 +54,150 @@ export default function Inicio() {
 
   const [idAlertaSOS, setIdAlertaSOS] = useState<string | null>(null)
 
+  /*
+   * Guarda o momento em que o Firebase confirmou o envio.
+   * Isso permite que o SOS continue ativo mesmo quando
+   * o usuário troca de aba.
+   */
+  const [inicioSOS, setInicioSOS] = useState<number | null>(null)
+
+  /*
+   * Recupera os dados do SOS quando o usuário volta para
+   * a tela inicial.
+   */
+  useEffect(() => {
+    if (!usuario) return
+
+    try {
+      const dadosSalvos = localStorage.getItem(
+        `artemis_sos_${usuario.uid}`
+      )
+
+      if (!dadosSalvos) return
+
+      const dados = JSON.parse(dadosSalvos)
+
+      /*
+       * Se ainda estiver enviando, recupera o estado.
+       */
+      if (dados.status === "enviando") {
+        setEnviandoSOS(true)
+        setSosAtivo(true)
+        setAlertaEnviado(false)
+        setIdAlertaSOS(dados.idAlertaSOS || null)
+        return
+      }
+
+      /*
+       * Se o SOS já foi enviado, verifica quanto tempo passou.
+       */
+      if (dados.status === "enviado" && dados.inicioSOS) {
+        const tempoPassado = Date.now() - dados.inicioSOS
+
+        /*
+         * Se os 2 minutos já passaram, limpa tudo.
+         */
+        if (tempoPassado >= TEMPO_SOS) {
+          localStorage.removeItem(
+            `artemis_sos_${usuario.uid}`
+          )
+
+          setSosAtivo(false)
+          setAlertaEnviado(false)
+          setEnviandoSOS(false)
+          setIdAlertaSOS(null)
+          setInicioSOS(null)
+          setContador(5)
+
+          return
+        }
+
+        /*
+         * Ainda está dentro dos 2 minutos.
+         */
+        setSosAtivo(true)
+        setAlertaEnviado(true)
+        setEnviandoSOS(false)
+        setIdAlertaSOS(dados.idAlertaSOS || null)
+        setInicioSOS(dados.inicioSOS)
+      }
+
+    } catch (error) {
+      console.error(
+        "Erro ao recuperar estado do SOS:",
+        error
+      )
+    }
+  }, [usuario])
+
+  /*
+   * Mantém o SOS ativo até completar 2 minutos,
+   * mesmo se o usuário voltar para a página depois.
+   */
+  useEffect(() => {
+    if (!inicioSOS || !usuario || !sosAtivo) return
+
+    const verificarTempo = () => {
+      const tempoPassado = Date.now() - inicioSOS
+
+      if (tempoPassado >= TEMPO_SOS) {
+        localStorage.removeItem(
+          `artemis_sos_${usuario.uid}`
+        )
+
+        setAlertaEnviado(false)
+        setSosAtivo(false)
+        setEnviandoSOS(false)
+        setIdAlertaSOS(null)
+        setInicioSOS(null)
+        setContador(5)
+
+        return true
+      }
+
+      return false
+    }
+
+    /*
+     * Verifica imediatamente.
+     */
+    if (verificarTempo()) return
+
+    /*
+     * Verifica periodicamente para garantir que,
+     * mesmo estando na página, ele volte ao normal
+     * exatamente após os 2 minutos.
+     */
+    const intervalo = setInterval(() => {
+      verificarTempo()
+    }, 1000)
+
+    /*
+     * Também cria um timeout próximo do momento exato
+     * dos 2 minutos.
+     */
+    const restante =
+      TEMPO_SOS - (Date.now() - inicioSOS)
+
+    const timer = setTimeout(() => {
+      localStorage.removeItem(
+        `artemis_sos_${usuario.uid}`
+      )
+
+      setAlertaEnviado(false)
+      setSosAtivo(false)
+      setEnviandoSOS(false)
+      setIdAlertaSOS(null)
+      setInicioSOS(null)
+      setContador(5)
+    }, restante)
+
+    return () => {
+      clearInterval(intervalo)
+      clearTimeout(timer)
+    }
+  }, [inicioSOS, usuario, sosAtivo])
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -62,7 +208,9 @@ export default function Inicio() {
       setUsuario(user)
 
       try {
-        const snap = await getDoc(doc(db, "usuarios", user.uid))
+        const snap = await getDoc(
+          doc(db, "usuarios", user.uid)
+        )
 
         if (snap.exists()) {
           setNomeUsuario(
@@ -75,7 +223,9 @@ export default function Inicio() {
     return () => unsub()
   }, [])
 
-  // Contagem regressiva
+  /*
+   * Contagem regressiva
+   */
   useEffect(() => {
     if (!contando) return
 
@@ -92,29 +242,19 @@ export default function Inicio() {
     return () => clearTimeout(t)
   }, [contando, contador])
 
-  // Depois que o Firebase confirmar o envio,
-  // mantém o alerta na tela por 2 minutos.
-  useEffect(() => {
-    if (!alertaEnviado || !sosAtivo) return
-
-    const timer = setTimeout(() => {
-      setAlertaEnviado(false)
-      setSosAtivo(false)
-      setEnviandoSOS(false)
-      setIdAlertaSOS(null)
-      setContador(5)
-    }, 2 * 60 * 1000)
-
-    return () => clearTimeout(timer)
-  }, [alertaEnviado, sosAtivo])
-
   function iniciarSOS() {
+    /*
+     * Impede iniciar outro SOS se já existir um ativo.
+     */
+    if (sosAtivo || enviandoSOS) return
+
     setContando(true)
     setContador(5)
     setAlertaEnviado(false)
     setEnviandoSOS(false)
     setSosAtivo(false)
     setIdAlertaSOS(null)
+    setInicioSOS(null)
   }
 
   function cancelarSOS() {
@@ -128,8 +268,26 @@ export default function Inicio() {
     setAlertaEnviado(false)
     setSosAtivo(true)
 
+    /*
+     * Salva imediatamente que o envio começou.
+     * Assim, se o usuário mudar de aba enquanto
+     * estiver esperando o Firebase, o estado não some.
+     */
+    if (usuario) {
+      localStorage.setItem(
+        `artemis_sos_${usuario.uid}`,
+        JSON.stringify({
+          status: "enviando",
+          idAlertaSOS: null
+        })
+      )
+    }
+
     try {
-      // Verifica se o botão SOS está ativado nas configurações
+      /*
+       * Verifica se o botão SOS está ativado
+       * nas configurações.
+       */
       const perfilSnap = await getDoc(
         doc(db, "usuarios", usuario?.uid || "")
       )
@@ -142,6 +300,10 @@ export default function Inicio() {
           "O botão SOS está desativado nas configurações de segurança."
         )
 
+        localStorage.removeItem(
+          `artemis_sos_${usuario.uid}`
+        )
+
         setEnviandoSOS(false)
         setSosAtivo(false)
         setContador(5)
@@ -149,85 +311,104 @@ export default function Inicio() {
         return
       }
 
+      /*
+       * Função responsável por criar o alerta no Firebase.
+       */
+      const criarAlerta = async (
+        latitude?: number,
+        longitude?: number
+      ) => {
+        try {
+          const dadosAlerta: any = {
+            usuario_id: usuario?.uid,
+            origem: "app",
+            ativo: true,
+            mensagem: `${nomeUsuario} ativou o botão SOS!`,
+            modo_silencioso: modoSilencioso,
+            criado_em: new Date().toISOString()
+          }
+
+          if (
+            latitude !== undefined &&
+            longitude !== undefined
+          ) {
+            dadosAlerta.latitude = latitude
+            dadosAlerta.longitude = longitude
+          }
+
+          const alertaRef = await addDoc(
+            collection(db, "alertas_sos"),
+            dadosAlerta
+          )
+
+          /*
+           * O Firebase confirmou.
+           * A partir daqui começam os 2 minutos.
+           */
+          const agora = Date.now()
+
+          setIdAlertaSOS(alertaRef.id)
+          setEnviandoSOS(false)
+          setAlertaEnviado(true)
+          setSosAtivo(true)
+          setContador(5)
+          setInicioSOS(agora)
+
+          /*
+           * Salva o estado no navegador.
+           * Isso é o que permite continuar ativo
+           * quando trocar de aba.
+           */
+          localStorage.setItem(
+            `artemis_sos_${usuario.uid}`,
+            JSON.stringify({
+              status: "enviado",
+              idAlertaSOS: alertaRef.id,
+              inicioSOS: agora
+            })
+          )
+
+        } catch (error) {
+          console.error(
+            "Erro ao enviar SOS:",
+            error
+          )
+
+          localStorage.removeItem(
+            `artemis_sos_${usuario.uid}`
+          )
+
+          setEnviandoSOS(false)
+          setSosAtivo(false)
+          setAlertaEnviado(false)
+
+          alert(
+            "Não foi possível enviar o alerta SOS. Tente novamente."
+          )
+
+          setContador(5)
+        }
+      }
+
+      /*
+       * Tenta obter a localização.
+       */
       navigator.geolocation?.getCurrentPosition(
         async (pos) => {
-          try {
-            const { latitude, longitude } = pos.coords
+          const { latitude, longitude } = pos.coords
 
-            const alertaRef = await addDoc(
-              collection(db, "alertas_sos"),
-              {
-                usuario_id: usuario?.uid,
-                origem: "app",
-                latitude,
-                longitude,
-                ativo: true,
-                mensagem: `${nomeUsuario} ativou o botão SOS!`,
-                modo_silencioso: modoSilencioso,
-                criado_em: new Date().toISOString()
-              }
-            )
-
-            // Guarda o ID para poder cancelar
-            setIdAlertaSOS(alertaRef.id)
-
-            // Firebase confirmou o envio
-            setEnviandoSOS(false)
-            setAlertaEnviado(true)
-            setSosAtivo(true)
-            setContador(5)
-
-          } catch (error) {
-            console.error("Erro ao enviar SOS:", error)
-
-            setEnviandoSOS(false)
-            setSosAtivo(false)
-
-            alert(
-              "Não foi possível enviar o alerta SOS. Tente novamente."
-            )
-
-            setContador(5)
-          }
+          await criarAlerta(
+            latitude,
+            longitude
+          )
         },
 
         async () => {
-          try {
-            // Caso a localização não esteja disponível,
-            // o alerta ainda será enviado.
-            const alertaRef = await addDoc(
-              collection(db, "alertas_sos"),
-              {
-                usuario_id: usuario?.uid,
-                origem: "app",
-                ativo: true,
-                mensagem: `${nomeUsuario} ativou o botão SOS!`,
-                modo_silencioso: modoSilencioso,
-                criado_em: new Date().toISOString()
-              }
-            )
-
-            // Guarda o ID para poder cancelar
-            setIdAlertaSOS(alertaRef.id)
-
-            // Firebase confirmou o envio
-            setEnviandoSOS(false)
-            setAlertaEnviado(true)
-            setSosAtivo(true)
-            setContador(5)
-
-          } catch (error) {
-            console.error("Erro ao enviar SOS:", error)
-
-            setEnviandoSOS(false)
-            setSosAtivo(false)
-
-            alert(
-              "Não foi possível enviar o alerta SOS. Tente novamente."
-            )
-
-            setContador(5)
-          }
+          /*
+           * Se a localização não estiver disponível,
+           * o alerta continua sendo enviado.
+           */
+          await criarAlerta()
         }
       )
 
@@ -237,8 +418,13 @@ export default function Inicio() {
         error
       )
 
+      localStorage.removeItem(
+        `artemis_sos_${usuario?.uid}`
+      )
+
       setEnviandoSOS(false)
       setSosAtivo(false)
+      setAlertaEnviado(false)
 
       alert(
         "Não foi possível enviar o alerta SOS. Tente novamente."
@@ -250,28 +436,51 @@ export default function Inicio() {
 
   async function cancelarSOSAtivo() {
     if (!idAlertaSOS) {
+      localStorage.removeItem(
+        `artemis_sos_${usuario?.uid}`
+      )
+
       setSosAtivo(false)
       setAlertaEnviado(false)
+      setEnviandoSOS(false)
+      setInicioSOS(null)
+
       return
     }
 
     try {
       await updateDoc(
-        doc(db, "alertas_sos", idAlertaSOS),
+        doc(
+          db,
+          "alertas_sos",
+          idAlertaSOS
+        ),
         {
           ativo: false,
-          cancelado_em: new Date().toISOString()
+          cancelado_em:
+            new Date().toISOString()
         }
+      )
+
+      /*
+       * Remove o SOS salvo no navegador.
+       */
+      localStorage.removeItem(
+        `artemis_sos_${usuario?.uid}`
       )
 
       setSosAtivo(false)
       setAlertaEnviado(false)
       setEnviandoSOS(false)
       setIdAlertaSOS(null)
+      setInicioSOS(null)
       setContador(5)
 
     } catch (error) {
-      console.error("Erro ao cancelar SOS:", error)
+      console.error(
+        "Erro ao cancelar SOS:",
+        error
+      )
 
       alert(
         "Não foi possível cancelar o SOS. Tente novamente."
@@ -280,29 +489,35 @@ export default function Inicio() {
   }
 
   function compartilharLocalizacao() {
-    navigator.geolocation?.getCurrentPosition((pos) => {
-      const { latitude, longitude } = pos.coords
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } =
+          pos.coords
 
-      const link =
-        `https://maps.google.com/?q=${latitude},${longitude}`
+        const link =
+          `https://maps.google.com/?q=${latitude},${longitude}`
 
-      const mensagem =
-        `Estou compartilhando minha localização em tempo real pelo Artemis: ${link}`
+        const mensagem =
+          `Estou compartilhando minha localização em tempo real pelo Artemis: ${link}`
 
-      if (navigator.share) {
-        navigator.share({
-          title: "Minha localização",
-          text: mensagem,
-        }).catch(() => {})
-      } else {
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(mensagem)}`,
-          "_blank"
+        if (navigator.share) {
+          navigator.share({
+            title: "Minha localização",
+            text: mensagem,
+          }).catch(() => {})
+        } else {
+          window.open(
+            `https://wa.me/?text=${encodeURIComponent(mensagem)}`,
+            "_blank"
+          )
+        }
+      },
+      () => {
+        alert(
+          "Não foi possível obter sua localização."
         )
       }
-    }, () => {
-      alert("Não foi possível obter sua localização.")
-    })
+    )
   }
 
   return (
@@ -358,7 +573,9 @@ export default function Inicio() {
         >
 
           {/* Estado normal */}
-          {!contando && !enviandoSOS && !sosAtivo ? (
+          {!contando &&
+          !enviandoSOS &&
+          !sosAtivo ? (
 
             <button
               onClick={iniciarSOS}
@@ -398,7 +615,8 @@ export default function Inicio() {
 
               <span
                 style={{
-                  color: "rgba(255,255,255,0.9)",
+                  color:
+                    "rgba(255,255,255,0.9)",
                   fontSize: "12px"
                 }}
               >
@@ -424,7 +642,9 @@ export default function Inicio() {
                 justifyContent: "center",
                 gap: "4px",
                 boxShadow:
-                  "0 8px 32px rgba(239,68,68,0.6)"
+                  "0 8px 32px rgba(239,68,68,0.6)",
+                animation:
+                  "sos-alert 0.8s ease-in-out infinite"
               }}
             >
               <span
@@ -439,7 +659,8 @@ export default function Inicio() {
 
               <span
                 style={{
-                  color: "rgba(255,255,255,0.9)",
+                  color:
+                    "rgba(255,255,255,0.9)",
                   fontSize: "14px",
                   fontWeight: "600"
                 }}
@@ -496,7 +717,8 @@ export default function Inicio() {
 
                 <span
                   style={{
-                    color: "rgba(255,255,255,0.9)",
+                    color:
+                      "rgba(255,255,255,0.9)",
                     fontSize: "12px",
                     textAlign: "center"
                   }}
@@ -541,7 +763,8 @@ export default function Inicio() {
             <p
               style={{
                 margin: "5px 0 0",
-                color: cores.textoSecundario,
+                color:
+                  cores.textoSecundario,
                 fontSize: "12px"
               }}
             >
@@ -580,11 +803,13 @@ export default function Inicio() {
             <p
               style={{
                 margin: "5px 0 0",
-                color: cores.textoSecundario,
+                color:
+                  cores.textoSecundario,
                 fontSize: "12px"
               }}
             >
-              Seus contatos de confiança foram notificados.
+              Seus contatos de confiança
+              foram notificados.
             </p>
           </div>
         )}
@@ -598,7 +823,8 @@ export default function Inicio() {
               maxWidth: "300px",
               padding: "13px 20px",
               borderRadius: "14px",
-              backgroundColor: cores.branco,
+              backgroundColor:
+                cores.branco,
               color: "#dc2626",
               border:
                 "1.5px solid #dc2626",
@@ -615,7 +841,9 @@ export default function Inicio() {
         {/* Modo silencioso */}
         <button
           onClick={() =>
-            setModoSilencioso(!modoSilencioso)
+            setModoSilencioso(
+              !modoSilencioso
+            )
           }
           style={{
             display: "flex",
@@ -628,8 +856,8 @@ export default function Inicio() {
             color:
               modoSilencioso
                 ? (isDark
-                  ? cores.fundo
-                  : "white")
+                    ? cores.fundo
+                    : "white")
                 : cores.texto,
             border:
               `1.5px solid ${
@@ -671,16 +899,19 @@ export default function Inicio() {
               flex: 1,
               padding: "16px",
               borderRadius: "16px",
-              backgroundColor: cores.branco,
+              backgroundColor:
+                cores.branco,
               textDecoration: "none",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: "8px",
               boxShadow:
-                "0 2px 8px " + cores.sombra,
+                "0 2px 8px " +
+                cores.sombra,
               border:
-                "1px solid " + cores.borda
+                "1px solid " +
+                cores.borda
             }}
           >
             <div
@@ -714,21 +945,26 @@ export default function Inicio() {
 
           {/* Compartilhar localização */}
           <button
-            onClick={compartilharLocalizacao}
+            onClick={
+              compartilharLocalizacao
+            }
             style={{
               flex: 1,
               padding: "16px",
               borderRadius: "16px",
-              backgroundColor: cores.branco,
+              backgroundColor:
+                cores.branco,
               cursor: "pointer",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: "8px",
               boxShadow:
-                "0 2px 8px " + cores.sombra,
+                "0 2px 8px " +
+                cores.sombra,
               border:
-                "1px solid " + cores.borda
+                "1px solid " +
+                cores.borda
             }}
           >
             <div
@@ -769,14 +1005,18 @@ export default function Inicio() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: cores.branco,
+          backgroundColor:
+            cores.branco,
           borderTop:
-            "1px solid " + cores.fundo,
+            "1px solid " +
+            cores.fundo,
           display: "flex",
-          justifyContent: "space-around",
+          justifyContent:
+            "space-around",
           padding: "10px 0",
           boxShadow:
-            "0 -2px 12px " + cores.sombra,
+            "0 -2px 12px " +
+            cores.sombra,
           zIndex: 1000
         }}
       >
@@ -790,10 +1030,13 @@ export default function Inicio() {
               href={item.href}
               style={{
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                flexDirection:
+                  "column",
+                alignItems:
+                  "center",
                 gap: "4px",
-                textDecoration: "none",
+                textDecoration:
+                  "none",
                 color:
                   ativo
                     ? cores.roxo
@@ -817,7 +1060,9 @@ export default function Inicio() {
                 style={{
                   fontSize: "10px",
                   fontWeight:
-                    ativo ? "600" : "400"
+                    ativo
+                      ? "600"
+                      : "400"
                 }}
               >
                 {item.label}
