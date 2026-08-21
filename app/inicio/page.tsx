@@ -6,7 +6,18 @@ import { onAuthStateChanged } from "firebase/auth"
 import { doc, getDoc, addDoc, collection, updateDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { MapPin, Users, MessageSquare, Home, Bell, Phone, Share2, AlertCircle, VolumeX, Volume2 } from "lucide-react"
+import {
+  MapPin,
+  Users,
+  MessageSquare,
+  Home,
+  Bell,
+  Phone,
+  Share2,
+  AlertCircle,
+  VolumeX,
+  Volume2
+} from "lucide-react"
 import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
@@ -25,6 +36,7 @@ export default function Inicio() {
   const router = useRouter()
   const { isDark } = useTema()
   const cores = getCores(isDark)
+
   usePresenca()
 
   const [usuario, setUsuario] = useState<any>(null)
@@ -38,7 +50,6 @@ export default function Inicio() {
   const [enviandoSOS, setEnviandoSOS] = useState(false)
   const [sosAtivo, setSosAtivo] = useState(false)
 
-  // Guarda o ID do alerta criado no Firebase
   const [idAlertaSOS, setIdAlertaSOS] = useState<string | null>(null)
 
   useEffect(() => {
@@ -81,8 +92,8 @@ export default function Inicio() {
     return () => clearTimeout(t)
   }, [contando, contador])
 
-  // Depois que o alerta for confirmado pelo Firebase,
-  // mantém a mensagem e o botão de cancelar por 5 minutos.
+  // Depois que o Firebase confirmar o envio,
+  // mantém o alerta na tela por 2 minutos.
   useEffect(() => {
     if (!alertaEnviado || !sosAtivo) return
 
@@ -92,7 +103,7 @@ export default function Inicio() {
       setEnviandoSOS(false)
       setIdAlertaSOS(null)
       setContador(5)
-    }, 5 * 60 * 1000)
+    }, 2 * 60 * 1000)
 
     return () => clearTimeout(timer)
   }, [alertaEnviado, sosAtivo])
@@ -157,7 +168,7 @@ export default function Inicio() {
               }
             )
 
-            // Guarda o ID do alerta para poder cancelar
+            // Guarda o ID para poder cancelar
             setIdAlertaSOS(alertaRef.id)
 
             // Firebase confirmou o envio
