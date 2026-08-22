@@ -11,7 +11,6 @@ import Header from "../componentes/Header"
 import dynamic from "next/dynamic"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
-import { isApp } from "../utils/localizacao"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -51,22 +50,62 @@ export default function Mapa() {
   }, [])
 
   useEffect(() => {
-  if (!usuarioId) return
-
-  let parar: any = null
-
-  async function iniciar() {
-    const { iniciarRastreamento } = await import("../utils/localizacao")
-    parar = await iniciarRastreamento((lat: number, lng: number) => {
-      setMinhaPos({ lat, lng })
-      setStatus("Localização em tempo real ativa")
+    if (!usuarioId) return
+    const q = query(collection(db, "grupos"), where("membros", "array-contains", usuarioId))
+    const unsub = onSnapshot(q, (snap) => {
+      const dados = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      setGrupos(dados)
+      setGruposSelecionados(new Set(dados.map((g: any) => g.id)))
     })
-  }
+    return () => unsub()
+  }, [usuarioId])
 
-  iniciar()
+  useEffect(() => {
+    if (!usuarioId) return
+    if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords
+        setMinhaPos({ lat: latitude, lng: longitude })
+        setStatus("Localização em tempo real ativa")
 
-  return () => { if (parar) parar() }
-}, [usuarioId])
+        // Verifica se a usuária permite compartilhar localização
+        const perfilSnap = await getDoc(doc(db, "usuarios", usuarioId))
+        const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
+
+        if (compartilha) {
+          await setDoc(doc(db, "localizacoes", usuarioId), {
+            usuario_id: usuarioId, latitude, longitude,
+            atualizado_em: new Date().toISOString()
+          })
+
+          // Salva ponto no histórico de rotas (se ativado, a cada 30s)
+          const salvarHistorico = perfilSnap.data()?.privacidade?.historico !== false
+          const agora = Date.now()
+          if (salvarHistorico && (agora - ultimoSalvoRef.current > 30000)) {
+            ultimoSalvoRef.current = agora
+            const hoje = new Date().toISOString().split("T")[0]
+            const { addDoc, collection: col } = await import("firebase/firestore")
+            await addDoc(col(db, "historico_rotas"), {
+              usuario_id: usuarioId,
+              latitude,
+              longitude,
+              data: hoje,
+              timestamp: new Date().toISOString()
+            })
+          }
+        } else {
+          const { deleteDoc } = await import("firebase/firestore")
+          try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch { }
+        }
+
+      },
+      () => setStatus("Permissão de localização negada"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [usuarioId])
 
   useEffect(() => {
     if (!usuarioId) return
