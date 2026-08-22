@@ -32,7 +32,7 @@ export function useLocalizacao() {
 
             const salvarHistorico = perfilSnap.data()?.privacidade?.historico !== false
             const agora = Date.now()
-            if (salvarHistorico && (agora - ultimoSalvo > 30000)) {
+            if (salvarHistorico && (agora - ultimoSalvo > 15000)) {
               ultimoSalvo = agora
               const hoje = new Date().toISOString().split("T")[0]
               await addDoc(collection(db, "historico_rotas"), {

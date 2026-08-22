@@ -61,51 +61,25 @@ export default function Mapa() {
   }, [usuarioId])
 
   useEffect(() => {
-    if (!usuarioId) return
-    if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
-    const watchId = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords
-        setMinhaPos({ lat: latitude, lng: longitude })
+  if (!usuarioId) return
+
+  let parar: any = null
+
+  async function iniciar() {
+    const { iniciarRastreamento } = await import("../utils/localizacao")
+    parar = await iniciarRastreamento(
+      (lat: number, lng: number) => {
+        setMinhaPos({ lat, lng })
         setStatus("Localização em tempo real ativa")
-
-        // Verifica se a usuária permite compartilhar localização
-        const perfilSnap = await getDoc(doc(db, "usuarios", usuarioId))
-        const compartilha = perfilSnap.data()?.privacidade?.locReal !== false
-
-        if (compartilha) {
-          await setDoc(doc(db, "localizacoes", usuarioId), {
-            usuario_id: usuarioId, latitude, longitude,
-            atualizado_em: new Date().toISOString()
-          })
-
-          // Salva ponto no histórico de rotas (se ativado, a cada 30s)
-          const salvarHistorico = perfilSnap.data()?.privacidade?.historico !== false
-          const agora = Date.now()
-          if (salvarHistorico && (agora - ultimoSalvoRef.current > 30000)) {
-            ultimoSalvoRef.current = agora
-            const hoje = new Date().toISOString().split("T")[0]
-            const { addDoc, collection: col } = await import("firebase/firestore")
-            await addDoc(col(db, "historico_rotas"), {
-              usuario_id: usuarioId,
-              latitude,
-              longitude,
-              data: hoje,
-              timestamp: new Date().toISOString()
-            })
-          }
-        } else {
-          const { deleteDoc } = await import("firebase/firestore")
-          try { await deleteDoc(doc(db, "localizacoes", usuarioId)) } catch { }
-        }
-
       },
-      () => setStatus("Permissão de localização negada"),
-      { enableHighAccuracy: true, timeout: 10000 }
+      () => setStatus("Permissão de localização negada")
     )
+  }
 
-    return () => navigator.geolocation.clearWatch(watchId)
-  }, [usuarioId])
+  iniciar()
+
+  return () => { if (parar) parar() }
+}, [usuarioId])
 
   useEffect(() => {
     if (!usuarioId) return

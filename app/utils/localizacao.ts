@@ -20,7 +20,7 @@ export async function iniciarRastreamento(
         backgroundTitle: "Localização ativa",
         requestPermissions: true,
         stale: false,
-        distanceFilter: 10,
+        distanceFilter: 3,
       },
       (location: any, error: any) => {
         if (error) {
