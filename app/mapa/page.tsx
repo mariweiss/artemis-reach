@@ -1,23 +1,17 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, onSnapshot, doc, setDoc, query, where } from "firebase/firestore"
-import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X } from "lucide-react"
+import { collection, onSnapshot, doc, setDoc, query, where, getDoc } from "firebase/firestore"
+import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X, Route } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Header from "../componentes/Header"
 import dynamic from "next/dynamic"
-
-const cores = {
-  fundo: "#EEEAF8",
-  roxo: "#5A4997",
-  roxoEscuro: "#2F195F",
-  roxoClaro: "#BB99FF",
-  lavanda: "#8575BD",
-  branco: "#FFFFFF",
-}
+import { useTema } from "../contexts/ThemeContext"
+import { getCores } from "../cores"
+import { isApp } from "../utils/localizacao"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -31,6 +25,8 @@ const nav = [
 const MapaLeaflet = dynamic(() => import("./MapaLeaflet"), { ssr: false })
 
 export default function Mapa() {
+  const { isDark } = useTema()
+  const cores = getCores(isDark)
   const [localizacoes, setLocalizacoes] = useState<any[]>([])
   const [minhaPos, setMinhaPos] = useState<{ lat: number; lng: number } | null>(null)
   const [status, setStatus] = useState("Obtendo localização...")
@@ -40,8 +36,12 @@ export default function Mapa() {
   const [modalGrupos, setModalGrupos] = useState(false)
   const pathname = usePathname()
   const [centralizar, setCentralizar] = useState(false)
+  const [modalSOS, setModalSOS] = useState(false)
+  const [contadorSOS, setContadorSOS] = useState<number | null>(null)
+  const contadorRef = useRef<any>(null)
   const [mostrarRota, setMostrarRota] = useState(false)
   const [pontosRota, setPontosRota] = useState<any[]>([])
+  const ultimoSalvoRef = useRef<number>(0)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -51,59 +51,104 @@ export default function Mapa() {
   }, [])
 
   useEffect(() => {
-    if (!usuarioId) return
-    const q = query(collection(db, "grupos"), where("membros", "array-contains", usuarioId))
-    const unsub = onSnapshot(q, (snap) => {
-      const dados = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-      setGrupos(dados)
-      setGruposSelecionados(new Set(dados.map((g: any) => g.id)))
+  if (!usuarioId) return
+
+  let parar: any = null
+
+  async function iniciar() {
+    const { iniciarRastreamento } = await import("../utils/localizacao")
+    parar = await iniciarRastreamento((lat: number, lng: number) => {
+      setMinhaPos({ lat, lng })
+      setStatus("Localização em tempo real ativa")
     })
-    return () => unsub()
-  }, [usuarioId])
+  }
+
+  iniciar()
+
+  return () => { if (parar) parar() }
+}, [usuarioId])
 
   useEffect(() => {
     if (!usuarioId) return
-    if (!navigator.geolocation) { setStatus("GPS não disponível"); return }
-    const watchId = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords
-        setMinhaPos({ lat: latitude, lng: longitude })
-        setStatus("Localização em tempo real ativa")
-        await setDoc(doc(db, "localizacoes", usuarioId), {
-          usuario_id: usuarioId, latitude, longitude,
-          atualizado_em: new Date().toISOString()
-        })
-      },
-      () => setStatus("Permissão de localização negada"),
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-    return () => navigator.geolocation.clearWatch(watchId)
-  }, [usuarioId])
 
-  useEffect(() => {
-    if (!usuarioId || grupos.length === 0) { setLocalizacoes([]); return }
     const idsParaMostrar = new Set<string>()
+
+    // IDs dos grupos selecionados
     grupos.forEach((grupo) => {
       if (gruposSelecionados.has(grupo.id)) {
-        ;(grupo.membros || []).forEach((uid: string) => {
+        ; (grupo.membros || []).forEach((uid: string) => {
           if (uid !== usuarioId) idsParaMostrar.add(uid)
         })
       }
     })
-    if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
-    const q = query(collection(db, "localizacoes"), where("usuario_id", "in", [...idsParaMostrar]))
-    const unsub = onSnapshot(q, (snap) => {
-      const locs = snap.docs.map((d) => {
-        const data = { id: d.id, ...d.data() } as any
-        const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
-        data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
-        data.nomeGrupo = grupoDoMembro?.nome || ""
-        return data
+
+    // Busca também contatos individuais do círculo
+    const qCirculo = query(
+      collection(db, "circulos"),
+      where("usuarios", "array-contains", usuarioId),
+      where("status", "==", "confirmado")
+    )
+
+    const unsubCirculo = onSnapshot(qCirculo, async (snapCirculo) => {
+      snapCirculo.docs.forEach(d => {
+        const data = d.data() as any
+        const outroId = data.usuarios.find((id: string) => id !== usuarioId)
+        if (outroId) idsParaMostrar.add(outroId)
       })
-      setLocalizacoes(locs)
+
+      if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
+
+      const q = query(
+        collection(db, "localizacoes"),
+        where("usuario_id", "in", [...idsParaMostrar])
+      )
+
+      onSnapshot(q, async (snap) => {
+        const locs = await Promise.all(snap.docs.map(async (d) => {
+          const data = { id: d.id, ...d.data() } as any
+          const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
+          data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
+          data.nomeGrupo = grupoDoMembro?.nome || ""
+          try {
+            const perfil = await getDoc(doc(db, "usuarios", data.usuario_id))
+            if (perfil.exists()) {
+              data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
+            }
+          } catch {
+            data.nomeUsuaria = "Usuária"
+          }
+          return data
+        }))
+        setLocalizacoes(locs)
+      })
     })
-    return () => unsub()
+
+    return () => unsubCirculo()
   }, [usuarioId, grupos, gruposSelecionados])
+
+  async function carregarRotaHoje() {
+    if (!usuarioId) return
+    if (mostrarRota) {
+      setMostrarRota(false)
+      setPontosRota([])
+      return
+    }
+    const hoje = new Date().toISOString().split("T")[0]
+    const { collection: col, query: q2, where: w2, orderBy: ob, getDocs } = await import("firebase/firestore")
+    const consulta = q2(
+      col(db, "historico_rotas"),
+      w2("usuario_id", "==", usuarioId),
+      w2("data", "==", hoje),
+      ob("timestamp", "asc")
+    )
+    const snap = await getDocs(consulta)
+    const pontos = snap.docs.map(d => {
+      const data = d.data()
+      return { lat: data.latitude, lng: data.longitude }
+    })
+    setPontosRota(pontos)
+    setMostrarRota(true)
+  }
 
   function toggleGrupo(grupoId: string) {
     setGruposSelecionados((prev) => {
@@ -119,6 +164,74 @@ export default function Mapa() {
     else setGruposSelecionados(new Set(grupos.map((g) => g.id)))
   }
 
+  function ativarSOSRapido() {
+    setModalSOS(true)
+    let c = 3
+    setContadorSOS(c)
+    contadorRef.current = setInterval(() => {
+      c--
+      setContadorSOS(c)
+      if (c <= 0) {
+        clearInterval(contadorRef.current)
+        confirmarSOS()
+      }
+    }, 1000)
+  }
+
+  function cancelarSOS() {
+    clearInterval(contadorRef.current)
+    setModalSOS(false)
+    setContadorSOS(null)
+  }
+
+  async function confirmarSOS() {
+    clearInterval(contadorRef.current)
+    setModalSOS(false)
+    setContadorSOS(null)
+
+    navigator.geolocation?.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords
+      const { addDoc, collection: col } = await import("firebase/firestore")
+      await addDoc(col(db, "alertas_sos"), {
+        usuario_id: usuarioId,
+        origem: "app",
+        latitude,
+        longitude,
+        ativo: true,
+        mensagem: "SOS acionado pelo mapa!",
+        criado_em: new Date().toISOString()
+      })
+    }, async () => {
+      const { addDoc, collection: col } = await import("firebase/firestore")
+      await addDoc(col(db, "alertas_sos"), {
+        usuario_id: usuarioId,
+        origem: "app",
+        ativo: true,
+        mensagem: "SOS acionado pelo mapa!",
+        criado_em: new Date().toISOString()
+      })
+    })
+  }
+
+  async function limparRotasAntigas() {
+    if (!usuarioId) return
+    const hoje = new Date().toISOString().split("T")[0]
+    const { collection: col, query: q2, where: w2, getDocs, deleteDoc, doc: d2 } = await import("firebase/firestore")
+
+    try {
+      const consulta = q2(
+        col(db, "historico_rotas"),
+        w2("usuario_id", "==", usuarioId),
+        w2("data", "!=", hoje)
+      )
+      const snap = await getDocs(consulta)
+      await Promise.all(snap.docs.map(ponto => deleteDoc(d2(db, "historico_rotas", ponto.id))))
+    } catch { }
+  }
+  useEffect(() => {
+    if (usuarioId) limparRotasAntigas()
+  }, [usuarioId])
+
   return (
     <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo }}>
       <Header />
@@ -130,33 +243,41 @@ export default function Mapa() {
         boxShadow: "0 2px 8px rgba(90,73,151,0.06)"
       }}>
         <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: status.includes("ativa") ? "#22c55e" : "#f97316" }} />
-        <span style={{ fontSize: "13px", color: "#666" }}>{status}</span>
+        <span style={{ fontSize: "13px", color: cores.texto }}>{status}</span>
         {localizacoes.length > 0 && (
           <span style={{ fontSize: "12px", color: cores.roxo, marginLeft: "auto" }}>
-            {localizacoes.length} pessoa{localizacoes.length > 1 ? "s" : ""} visível{localizacoes.length > 1 ? "is" : ""}
+            {localizacoes.length} {localizacoes.length > 1 ? "pessoas visíveis" : "pessoa visível"}
           </span>
         )}
       </div>
 
       {/* Mapa Leaflet */}
-      <div style={{ width: "100%", height: "calc(100vh - 170px)" }}>
-        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []} />
+      <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>
+        {minhaPos ? (
+          <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []} />
+        ) : (
+          <div style={{ width: "100%", height: "calc(100vh - 170px)", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: cores.fundo, flexDirection: "column", gap: "12px" }}>
+            <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: `3px solid ${cores.roxo}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+            <p style={{ color: cores.textoSecundario, fontSize: "14px" }}>Obtendo sua localização...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
       </div>
 
       {/* Botão centralizar */}
-      <div style={{ position: "fixed", bottom: "90px", left: "24px" }}>
-        <button style={{
-          width: "44px", height: "44px", borderRadius: "50%",
-          backgroundColor: cores.branco, border: "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
-        }}>
+      <div style={{ position: "fixed", bottom: "80px", left: "24px", zIndex: 999 }}>
+        <button onClick={() => { setCentralizar(true); setTimeout(() => setCentralizar(false), 500) }}
+          style={{
+            width: "44px", height: "44px", borderRadius: "50%", backgroundColor: cores.branco,
+            border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
+          }}>
           <Navigation size={20} color={cores.roxo} />
         </button>
       </div>
 
       {/* Botão grupos */}
-      <div style={{ position: "fixed", bottom: "148px", right: "24px" }}>
+      <div style={{ position: "fixed", bottom: "208px", left: "24px", zIndex: 999 }}>
         <button onClick={() => setModalGrupos(true)} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -179,25 +300,99 @@ export default function Mapa() {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "90px", right: "24px" }}>
-        <button style={{
-          width: "56px", height: "56px", borderRadius: "50%",
-          backgroundColor: "#ef4444", border: "4px solid white",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", boxShadow: "0 4px 20px rgba(239,68,68,0.3)"
-        }}>
+      <div style={{ position: "fixed", bottom: "100px", right: "24px", zIndex: 3000 }}>
+        <button
+          onClick={() => ativarSOSRapido()}
+          style={{
+            width: "64px", height: "64px", borderRadius: "50%",
+            backgroundColor: "#ef4444", border: "4px solid white",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", boxShadow: "0 4px 20px rgba(239,68,68,0.3)",
+            animation: "pulse-sos 2s ease-in-out infinite"
+          }}>
           <AlertCircle size={24} color={cores.branco} />
+        </button>
+      </div>
+
+      {/* Confirmação SOS */}
+      {modalSOS && (
+        <>
+          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 4000 }} />
+          <div style={{
+            position: "fixed", bottom: 0, left: 0, right: 0,
+            backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
+            padding: "32px 24px", zIndex: 4001,
+            boxShadow: "0 -4px 24px rgba(239,68,68,0.2)"
+          }}>
+            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+              <div style={{
+                width: "64px", height: "64px", borderRadius: "50%",
+                backgroundColor: "rgba(239,68,68,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 16px"
+              }}>
+                <AlertCircle size={32} color="#ef4444" />
+              </div>
+              <h3 style={{ color: cores.roxoEscuro, margin: "0 0 8px", fontSize: "20px" }}>
+                Acionar SOS?
+              </h3>
+              <p style={{ color: cores.lavanda, fontSize: "14px", margin: 0 }}>
+                Seu círculo será notificado com sua localização atual.
+              </p>
+              {contadorSOS !== null && (
+                <div style={{
+                  marginTop: "16px", width: "56px", height: "56px", borderRadius: "50%",
+                  backgroundColor: "#ef4444", color: "white",
+                  fontSize: "24px", fontWeight: "800",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "16px auto 0"
+                }}>
+                  {contadorSOS}
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button onClick={cancelarSOS} style={{
+                flex: 1, padding: "14px", borderRadius: "14px",
+                border: `1.5px solid ${cores.roxoClaro}`,
+                backgroundColor: "transparent", color: cores.roxo,
+                fontSize: "15px", fontWeight: "600", cursor: "pointer"
+              }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarSOS} style={{
+                flex: 2, padding: "14px", borderRadius: "14px",
+                border: "none", backgroundColor: "#ef4444",
+                color: "white", fontSize: "15px", fontWeight: "700",
+                cursor: "pointer"
+              }}>
+                Enviar SOS agora
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Botão histórico de rota */}
+      <div style={{ position: "fixed", bottom: "144px", left: "24px", zIndex: 999 }}>
+        <button onClick={carregarRotaHoje} style={{
+          width: "44px", height: "44px", borderRadius: "50%",
+          backgroundColor: mostrarRota ? cores.roxo : cores.branco,
+          border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
+        }}>
+          <Route size={20} color={mostrarRota ? "white" : cores.roxo} />
         </button>
       </div>
 
       {/* Modal grupos */}
       {modalGrupos && (
         <>
-          <div onClick={() => setModalGrupos(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)", zIndex: 200 }} />
+          <div onClick={() => setModalGrupos(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)", zIndex: 2000 }} />
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0,
             backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
-            padding: "24px", zIndex: 300,
+            padding: "24px", zIndex: 2001,
             boxShadow: "0 -4px 24px rgba(90,73,151,0.15)"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -278,10 +473,10 @@ export default function Mapa() {
 
       {/* Navbar */}
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0,
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 999,
         backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`,
         display: "flex", justifyContent: "space-around",
-        padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)"
+        padding: "10px 0", boxShadow: "0 -2px 12px rgba(90,73,151,0.08)",
       }}>
         {nav.map((item) => {
           const ativo = pathname === item.href
@@ -298,6 +493,13 @@ export default function Mapa() {
           )
         })}
       </div>
+      <style>{`
+      @keyframes pulse-sos {
+        0%, 100% { box-shadow: 0 4px 20px rgba(239,68,68,0.3); }
+        50% { box-shadow: 0 4px 30px rgba(239,68,68,0.7); }
+      }
+    `}</style>
     </div>
+
   )
 }

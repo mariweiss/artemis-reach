@@ -5,7 +5,7 @@ import { auth, db } from "../firebase"
 import { onAuthStateChanged, deleteUser, EmailAuthProvider, reauthenticateWithCredential, User } from "firebase/auth"
 import { doc, getDoc, updateDoc } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
-import { MapPin, Users, MessageSquare, Home, Bell, Camera, Phone, Mail, Edit2, Check, X, Calendar } from "lucide-react"
+import { MapPin, Users, MessageSquare, Home, Bell, Phone, Mail, Edit2, Check, X, Calendar } from "lucide-react"
 import Link from "next/link"
 import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
@@ -96,19 +96,14 @@ export default function Perfil() {
 
         {/* Avatar */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "28px" }}>
-          <div style={{ position: "relative" }}>
-            <div style={{
-              width: "88px", height: "88px", borderRadius: "50%",
-              backgroundColor: cores.fundo, border: `3px solid ${cores.amarelo}`,
-              display: "flex", alignItems: "center", justifyContent: "center"
-            }}>
-              <div style={{ width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#c4b5e0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="#5A4997"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-              </div>
-            </div>
-            <button style={{ position: "absolute", bottom: 0, right: 0, width: "28px", height: "28px", borderRadius: "50%", backgroundColor: cores.roxo, border: `2px solid ${cores.branco}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <Camera size={13} color="white" />
-            </button>
+          <div style={{
+            width: "88px", height: "88px", borderRadius: "50%",
+            backgroundColor: cores.roxo, border: `3px solid ${cores.amarelo}`,
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }}>
+            <span style={{ fontSize: "32px", fontWeight: "700", color: "white" }}>
+              {(dados.nome || "U").split(" ").slice(0, 2).map((n: string) => n[0]).join("").toUpperCase()}
+            </span>
           </div>
           <p style={{ color: cores.roxoEscuro, fontWeight: "700", fontSize: "16px", margin: "10px 0 0" }}>{dados.nome || "Usuária"}</p>
           {dados.membroDesde && <p style={{ color: cores.lavanda, fontSize: "12px", margin: "3px 0 0" }}>Membro desde {dados.membroDesde}</p>}
