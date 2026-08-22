@@ -39,6 +39,9 @@ export default function Mapa() {
   const [gruposSelecionados, setGruposSelecionados] = useState<Set<string>>(new Set())
   const [modalGrupos, setModalGrupos] = useState(false)
   const pathname = usePathname()
+  const [centralizar, setCentralizar] = useState(false)
+  const [mostrarRota, setMostrarRota] = useState(false)
+  const [pontosRota, setPontosRota] = useState<any[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -137,7 +140,7 @@ export default function Mapa() {
 
       {/* Mapa Leaflet */}
       <div style={{ width: "100%", height: "calc(100vh - 170px)" }}>
-        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} />
+        <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []} />
       </div>
 
       {/* Botão centralizar */}
