@@ -95,6 +95,7 @@ export default function Perfil() {
         <p style={{ color: cores.lavanda, fontSize: "13px", marginBottom: "24px" }}>Gerencie suas informações pessoais</p>
 
         {/* Avatar */}
+        {/* Avatar */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "28px" }}>
           <div style={{
             width: "88px", height: "88px", borderRadius: "50%",

@@ -135,7 +135,6 @@ export default function Privacidade() {
 
         <Secao icon={Navigation} titulo="Localização">
           <Item label="Compartilhar localização em tempo real" desc="Permite que seu círculo veja onde você está" ativo={configs.locReal} onChange={() => toggle("locReal")} />
-          <Item label="Compartilhar rotas frequentes" desc="Seu círculo pode ver suas rotas mais usadas" ativo={configs.rotasFreq} onChange={() => toggle("rotasFreq")} />
           <Item label="Salvar histórico de localização" desc="Mantém registro dos locais visitados" ativo={configs.historico} onChange={() => toggle("historico")} />
         </Secao>
 

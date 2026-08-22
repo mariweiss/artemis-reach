@@ -59,22 +59,30 @@ export default function Seguranca() {
   const [msg, setMsg] = useState("")
   const [salvando, setSalvando] = useState(false)
   const [modalTeste, setModalTeste] = useState(false)
+  const [echoConectado, setEchoConectado] = useState(false)
+  const [echoNome, setEchoNome] = useState("")
+  
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.push("/"); return }
-      setUsuario(user)
-      // Carrega configs salvas
-      try {
-        const { getDoc, doc } = await import("firebase/firestore")
-        const snap = await getDoc(doc(db, "usuarios", user.uid))
-        if (snap.exists() && snap.data().seguranca) {
-          setConfigs(prev => ({ ...prev, ...snap.data().seguranca }))
-        }
-      } catch { }
-    })
-    return () => unsub()
-  }, [])
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    if (!user) { router.push("/"); return }
+    setUsuario(user)
+    // Carrega configs salvas
+    try {
+      const { getDoc, doc } = await import("firebase/firestore")
+      const snap = await getDoc(doc(db, "usuarios", user.uid))
+      const data = snap.data() as any
+      if (data?.seguranca) {
+        setConfigs(prev => ({ ...prev, ...data.seguranca }))
+      }
+      if (data?.echo?.conectado) {
+        setEchoConectado(true)
+        setEchoNome(data.echo.nome || "Artemis Echo")
+      }
+    } catch { }
+  })
+  return () => unsub()
+}, [])
 
   function toggle(key) { setConfigs(prev => ({ ...prev, [key]: !prev[key] })) }
 
@@ -114,6 +122,12 @@ export default function Seguranca() {
     ? new Date(usuario.metadata.lastSignInTime).toLocaleDateString("pt-BR")
     : "nunca"
 
+  function testarAlerta() {
+  const audio = new Audio("/sounds/alarme.mp3")
+  audio.play().catch(() => {})
+  setModalTeste(true)
+  }
+
   return (
     <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo, minHeight: "100vh" }}>
       <Header />
@@ -132,18 +146,6 @@ export default function Seguranca() {
 
         {/* Autenticação */}
         <Secao icon={Shield} titulo="Autenticação">
-          {[
-            { key: "doisFatores", label: "Autenticação de dois fatores", desc: "Adiciona uma camada extra de proteção ao fazer login" },
-            { key: "biometrico", label: "Login biométrico", desc: "Use sua digital ou reconhecimento facial" },
-          ].map(item => (
-            <div key={item.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: `1px solid ${cores.fundo}` }}>
-              <div>
-                <p style={{ margin: 0, fontSize: "14px", color: cores.roxoEscuro }}>{item.label}</p>
-                <p style={{ margin: "2px 0 0", fontSize: "12px", color: cores.lavanda }}>{item.desc}</p>
-              </div>
-              <Toggle ativo={configs[item.key]} onChange={() => toggle(item.key)} />
-            </div>
-          ))}
           <button onClick={() => setModalSenha(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "none", border: "none", cursor: "pointer" }}>
             <div style={{ textAlign: "left" }}>
               <p style={{ margin: 0, fontSize: "14px", color: cores.roxoEscuro }}>Alterar senha</p>
@@ -157,7 +159,6 @@ export default function Seguranca() {
         <Secao icon={AlertCircle} titulo="Alertas de Emergência">
           {[
             { key: "sosAtivo", label: "Botão SOS ativado", desc: "Notifica seu círculo e contatos de emergência" },
-            { key: "alertaAuto", label: "Alerta automático", desc: "Detecta situações de risco e alerta automaticamente" },
           ].map(item => (
             <div key={item.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: `1px solid ${cores.fundo}` }}>
               <div>
@@ -167,7 +168,7 @@ export default function Seguranca() {
               <Toggle ativo={configs[item.key]} onChange={() => toggle(item.key)} />
             </div>
           ))}
-          <button onClick={() => setModalTeste(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "rgba(239,68,68,0.04)", border: "none", cursor: "pointer" }}>
+          <button onClick={testarAlerta} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "rgba(239,68,68,0.04)", border: "none", cursor: "pointer" }}>
             <div style={{ textAlign: "left" }}>
               <p style={{ margin: 0, fontSize: "14px", color: "#dc2626" }}>Testar Alerta SOS</p>
               <p style={{ margin: "2px 0 0", fontSize: "12px", color: cores.lavanda }}>Simula um alerta sem notificar contatos</p>
@@ -179,10 +180,10 @@ export default function Seguranca() {
         {/* Dispositivos */}
         <Secao icon={Monitor} titulo="Dispositivos Conectados">
           {[
-            { nome: "Este dispositivo", desc: `${navigator?.userAgent?.includes("iPhone") ? "iPhone" : "Computador"} • Último acesso: Agora`, badge: "Ativo", cor: "#16a34a" },
-            { nome: "Artemis Echo #A2B4", desc: "Dispositivo pareado em 11/04/2026", badge: "Conectado", cor: cores.roxo },
-          ].map((d, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: i === 0 ? `1px solid ${cores.fundo}` : "none" }}>
+            { nome: "Este dispositivo", desc: "Ativo agora", badge: "Ativo", cor: "#16a34a" },
+            ...(echoConectado ? [{ nome: echoNome, desc: "Dispositivo Bluetooth pareado", badge: "Conectado", cor: cores.roxo }] : [])
+          ].map((d, i, arr) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: i < arr.length - 1 ? `1px solid ${cores.fundo}` : "none" }}>
               <div>
                 <p style={{ margin: 0, fontSize: "14px", color: cores.roxoEscuro, fontWeight: "600" }}>{d.nome}</p>
                 <p style={{ margin: "2px 0 0", fontSize: "12px", color: cores.lavanda }}>{d.desc}</p>

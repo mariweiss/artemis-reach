@@ -69,9 +69,15 @@ export default function Dispositivo() {
       adicionarLog("Dispositivo encontrado: " + device.name)
       deviceRef.current = device
 
-      device.addEventListener("gattserverdisconnected", () => {
+      device.addEventListener("gattserverdisconnected", async () => {
         setStatus("desconectado")
         adicionarLog("Dispositivo desconectado.", "aviso")
+        if (usuario) {
+          const { setDoc, doc } = await import("firebase/firestore")
+          await setDoc(doc(db, "usuarios", usuario.uid), {
+            echo: { conectado: false }
+          }, { merge: true })
+        }
       })
 
       const server = await device.gatt.connect()
@@ -97,7 +103,7 @@ export default function Dispositivo() {
         adicionarLog("Valor recebido: " + value, "info")
 
         if (value === "SOS_ATIVADO" || value.includes("SOS") || value.length > 3) {
-          adicionarLog("🆘 BOTÃO SOS PRESSIONADO!", "erro")
+          adicionarLog("BOTÃO SOS PRESSIONADO!", "erro")
 
           navigator.geolocation?.getCurrentPosition(
             async (pos) => {
@@ -141,6 +147,18 @@ export default function Dispositivo() {
       setStatus("conectado")
       adicionarLog("✓ Artemis Echo conectado com sucesso!", "sucesso")
 
+      // Salva status do Echo no Firebase
+      if (usuario) {
+        const { setDoc, doc } = await import("firebase/firestore")
+        await setDoc(doc(db, "usuarios", usuario.uid), {
+          echo: {
+            conectado: true,
+            nome: device.name || "Artemis Echo",
+            ultima_conexao: new Date().toISOString()
+          }
+        }, { merge: true })
+      }
+
     } catch (err: any) {
       setStatus("desconectado")
       if (err.name === "NotFoundError") {
@@ -158,6 +176,14 @@ export default function Dispositivo() {
     setStatus("desconectado")
     cmdCharRef.current = null
     adicionarLog("Desconectado manualmente.")
+
+    // Atualiza status no Firebase
+    if (usuario) {
+      const { setDoc, doc } = await import("firebase/firestore")
+      await setDoc(doc(db, "usuarios", usuario.uid), {
+        echo: { conectado: false }
+      }, { merge: true })
+    }
   }
 
   async function enviarComando(cmd: string) {
