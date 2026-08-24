@@ -25,6 +25,7 @@ import { getCores } from "../cores"
 import { usePresenca } from "../hooks/usePresenca"
 import { useLocalizacao } from "../hooks/useLocalizacao"
 import AvisoBateria from "../componentes/AvisoBateria"
+import {useNotificacaoAlerta} from "../hooks/useNotificacaoAlerta"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -44,6 +45,7 @@ export default function Inicio() {
 
   usePresenca()
   useLocalizacao()
+  useNotificacaoAlerta()
 
   const [usuario, setUsuario] = useState<any>(null)
   const [nomeUsuario, setNomeUsuario] = useState("")
@@ -69,6 +71,13 @@ export default function Inicio() {
    * Recupera os dados do SOS quando o usuário volta para
    * a tela inicial.
    */
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission()
+    }
+  }, [])
+
   useEffect(() => {
     if (!usuario) return
 
