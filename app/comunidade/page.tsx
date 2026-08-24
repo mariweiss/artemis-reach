@@ -230,7 +230,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 
   // ─── CONVERSA ABERTA ───
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 240px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 140px)" }}>
       {/* Header do chat */}
       <div style={{ padding: "12px 16px", backgroundColor: cores.branco, borderBottom: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "10px" }}>
         <button onClick={() => setChatAtivo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: cores.roxo, fontSize: "20px" }}>←</button>
@@ -278,7 +278,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
       </div>
 
       {/* Input */}
-      <div style={{ padding: "12px 16px", backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={{ padding: "12px 16px", backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "8px"}}>
         <input
           placeholder="Digite uma mensagem..."
           value={texto}
