@@ -345,7 +345,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão SOS */}
-      <div style={{ position: "fixed", bottom: "100px", right: "24px", zIndex: 3000 }}>
+      <div style={{ position: "fixed", bottom: "100px", right: "24px", zIndex: 999 }}>
         <button
           onClick={() => ativarSOSRapido()}
           style={{
@@ -362,7 +362,7 @@ export default function Mapa() {
       {/* Confirmação SOS */}
       {modalSOS && (
         <>
-          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 4000 }} />
+          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 999 }} />
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0,
             backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
