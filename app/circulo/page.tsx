@@ -169,6 +169,18 @@ export default function Circulo() {
   }
 
   async function gerarLinkGrupo(grupo: any) {
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    await addDoc(collection(db, "convites"), {
+      token,
+      criador_id: usuario.uid,
+      criador_nome: nomeUsuario,
+      grupo_id: grupo.id,
+      grupo_nome: grupo.nome,
+      tipo: "grupo",
+      status: "pendente",
+      expira_em: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      criado_em: new Date().toISOString()
+    })
     const link = `https://artemis-reach.vercel.app/aceitar-convite?token=${token}`
     setLinkGerado(link)
     setModalConviteGrupo(grupo)
