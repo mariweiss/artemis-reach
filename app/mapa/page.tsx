@@ -41,6 +41,9 @@ export default function Mapa() {
   const [mostrarRota, setMostrarRota] = useState(false)
   const [pontosRota, setPontosRota] = useState<any[]>([])
   const ultimoSalvoRef = useRef<number>(0)
+  const [contatos, setContatos] = useState<any[]>([])
+  const [contatosSelecionados, setContatosSelecionados] = useState<Set<string>>(new Set())
+  const [abaModal, setAbaModal] = useState<"grupos" | "contatos">("grupos")
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -61,25 +64,25 @@ export default function Mapa() {
   }, [usuarioId])
 
   useEffect(() => {
-  if (!usuarioId) return
+    if (!usuarioId) return
 
-  let parar: any = null
+    let parar: any = null
 
-  async function iniciar() {
-    const { iniciarRastreamento } = await import("../utils/localizacao")
-    parar = await iniciarRastreamento(
-      (lat: number, lng: number) => {
-        setMinhaPos({ lat, lng })
-        setStatus("Localização em tempo real ativa")
-      },
-      () => setStatus("Permissão de localização negada")
-    )
-  }
+    async function iniciar() {
+      const { iniciarRastreamento } = await import("../utils/localizacao")
+      parar = await iniciarRastreamento(
+        (lat: number, lng: number) => {
+          setMinhaPos({ lat, lng })
+          setStatus("Localização em tempo real ativa")
+        },
+        () => setStatus("Permissão de localização negada")
+      )
+    }
 
-  iniciar()
+    iniciar()
 
-  return () => { if (parar) parar() }
-}, [usuarioId])
+    return () => { if (parar) parar() }
+  }, [usuarioId])
 
   useEffect(() => {
     if (!usuarioId) return
@@ -89,55 +92,70 @@ export default function Mapa() {
     // IDs dos grupos selecionados
     grupos.forEach((grupo) => {
       if (gruposSelecionados.has(grupo.id)) {
-        ; (grupo.membros || []).forEach((uid: string) => {
+        (grupo.membros || []).forEach((uid: string) => {
           if (uid !== usuarioId) idsParaMostrar.add(uid)
         })
       }
     })
 
-    // Busca também contatos individuais do círculo
-    const qCirculo = query(
+    // IDs dos contatos individuais selecionados
+    contatosSelecionados.forEach((id) => {
+      if (id !== usuarioId) idsParaMostrar.add(id)
+    })
+
+    if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
+
+    const q = query(
+      collection(db, "localizacoes"),
+      where("usuario_id", "in", [...idsParaMostrar])
+    )
+
+    const unsub = onSnapshot(q, async (snap) => {
+      const locs = await Promise.all(snap.docs.map(async (d) => {
+        const data = { id: d.id, ...d.data() } as any
+        const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
+        data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
+        data.nomeGrupo = grupoDoMembro?.nome || ""
+        try {
+          const perfil = await getDoc(doc(db, "usuarios", data.usuario_id))
+          if (perfil.exists()) {
+            data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
+          }
+        } catch {
+          data.nomeUsuaria = "Usuária"
+        }
+        return data
+      }))
+      setLocalizacoes(locs)
+    })
+
+    return () => unsub()
+  }, [usuarioId, grupos, gruposSelecionados, contatosSelecionados])
+
+  useEffect(() => {
+    if (!usuarioId) return
+    const q = query(
       collection(db, "circulos"),
       where("usuarios", "array-contains", usuarioId),
       where("status", "==", "confirmado")
     )
-
-    const unsubCirculo = onSnapshot(qCirculo, async (snapCirculo) => {
-      snapCirculo.docs.forEach(d => {
+    const unsub = onSnapshot(q, async (snap) => {
+      const lista = await Promise.all(snap.docs.map(async (d) => {
         const data = d.data() as any
         const outroId = data.usuarios.find((id: string) => id !== usuarioId)
-        if (outroId) idsParaMostrar.add(outroId)
-      })
-
-      if (idsParaMostrar.size === 0) { setLocalizacoes([]); return }
-
-      const q = query(
-        collection(db, "localizacoes"),
-        where("usuario_id", "in", [...idsParaMostrar])
-      )
-
-      onSnapshot(q, async (snap) => {
-        const locs = await Promise.all(snap.docs.map(async (d) => {
-          const data = { id: d.id, ...d.data() } as any
-          const grupoDoMembro = grupos.find((g) => gruposSelecionados.has(g.id) && (g.membros || []).includes(data.usuario_id))
-          data.corGrupo = grupoDoMembro?.cor || cores.roxoClaro
-          data.nomeGrupo = grupoDoMembro?.nome || ""
-          try {
-            const perfil = await getDoc(doc(db, "usuarios", data.usuario_id))
-            if (perfil.exists()) {
-              data.nomeUsuaria = perfil.data()?.nome?.split(" ")[0] || "Usuária"
-            }
-          } catch {
-            data.nomeUsuaria = "Usuária"
-          }
-          return data
-        }))
-        setLocalizacoes(locs)
-      })
+        let nome = "Contato"
+        try {
+          const perfil = await getDoc(doc(db, "usuarios", outroId))
+          if (perfil.exists()) nome = perfil.data()?.nome || "Contato"
+        } catch { }
+        return { id: outroId, nome, circuloId: d.id }
+      }))
+      setContatos(lista)
+      // Por padrão, todos selecionados
+      setContatosSelecionados(new Set(lista.map(c => c.id)))
     })
-
-    return () => unsubCirculo()
-  }, [usuarioId, grupos, gruposSelecionados])
+    return () => unsub()
+  }, [usuarioId])
 
   async function carregarRotaHoje() {
     if (!usuarioId) return
@@ -175,6 +193,20 @@ export default function Mapa() {
   function toggleTodos() {
     if (gruposSelecionados.size === grupos.length) setGruposSelecionados(new Set())
     else setGruposSelecionados(new Set(grupos.map((g) => g.id)))
+  }
+
+  function toggleContato(contatoId: string) {
+    setContatosSelecionados((prev) => {
+      const novo = new Set(prev)
+      if (novo.has(contatoId)) novo.delete(contatoId)
+      else novo.add(contatoId)
+      return novo
+    })
+  }
+
+  function toggleTodosContatos() {
+    if (contatosSelecionados.size === contatos.length) setContatosSelecionados(new Set())
+    else setContatosSelecionados(new Set(contatos.map((c) => c.id)))
   }
 
   function ativarSOSRapido() {
@@ -298,7 +330,7 @@ export default function Mapa() {
           cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", position: "relative"
         }}>
           <Layers size={20} color={cores.roxo} />
-          {gruposSelecionados.size > 0 && (
+          {gruposSelecionados.size + contatosSelecionados.size > 0 && (
             <div style={{
               position: "absolute", top: "-4px", right: "-4px",
               width: "18px", height: "18px", borderRadius: "50%",
@@ -306,7 +338,7 @@ export default function Mapa() {
               fontSize: "10px", fontWeight: "700",
               display: "flex", alignItems: "center", justifyContent: "center"
             }}>
-              {gruposSelecionados.size}
+              {gruposSelecionados.size + contatosSelecionados.size}
             </div>
           )}
         </button>
@@ -398,85 +430,165 @@ export default function Mapa() {
         </button>
       </div>
 
-      {/* Modal grupos */}
+      {/* Modal grupos e contatos */}
       {modalGrupos && (
         <>
           <div onClick={() => setModalGrupos(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)", zIndex: 2000 }} />
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0,
             backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
-            padding: "24px", zIndex: 2001,
+            padding: "24px", zIndex: 2001, maxHeight: "70vh", overflowY: "auto",
             boxShadow: "0 -4px 24px rgba(90,73,151,0.15)"
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <div>
-                <h3 style={{ color: cores.roxoEscuro, margin: 0, fontSize: "17px" }}>Grupos no mapa</h3>
-                <p style={{ color: cores.lavanda, margin: "4px 0 0", fontSize: "12px" }}>Selecione quais grupos visualizar</p>
+                <h3 style={{ color: cores.roxoEscuro, margin: 0, fontSize: "17px" }}>Ver no mapa</h3>
+                <p style={{ color: cores.lavanda, margin: "4px 0 0", fontSize: "12px" }}>Escolha quem visualizar</p>
               </div>
               <button onClick={() => setModalGrupos(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
                 <X size={20} color={cores.lavanda} />
               </button>
             </div>
 
-            {grupos.length > 1 && (
-              <button onClick={toggleTodos} style={{
-                width: "100%", padding: "12px 16px", borderRadius: "12px",
-                backgroundColor: cores.fundo, border: "none",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                cursor: "pointer", marginBottom: "12px"
+            {/* Abas */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+              <button onClick={() => setAbaModal("grupos")} style={{
+                flex: 1, padding: "10px", borderRadius: "12px",
+                border: "none", cursor: "pointer", fontSize: "13px", fontWeight: "600",
+                backgroundColor: abaModal === "grupos" ? cores.roxo : cores.fundo,
+                color: abaModal === "grupos" ? "white" : cores.lavanda
               }}>
-                <span style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro }}>
-                  {gruposSelecionados.size === grupos.length ? "Desmarcar todos" : "Selecionar todos"}
-                </span>
-                <div style={{
-                  width: "20px", height: "20px", borderRadius: "6px",
-                  backgroundColor: gruposSelecionados.size === grupos.length ? cores.roxo : "transparent",
-                  border: `2px solid ${gruposSelecionados.size === grupos.length ? cores.roxo : "#ddd"}`,
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                  {gruposSelecionados.size === grupos.length && <Check size={12} color="white" />}
-                </div>
+                Grupos ({grupos.length})
               </button>
+              <button onClick={() => setAbaModal("contatos")} style={{
+                flex: 1, padding: "10px", borderRadius: "12px",
+                border: "none", cursor: "pointer", fontSize: "13px", fontWeight: "600",
+                backgroundColor: abaModal === "contatos" ? cores.roxo : cores.fundo,
+                color: abaModal === "contatos" ? "white" : cores.lavanda
+              }}>
+                Contatos ({contatos.length})
+              </button>
+            </div>
+
+            {/* ABA GRUPOS */}
+            {abaModal === "grupos" && (
+              <>
+                {grupos.length > 1 && (
+                  <button onClick={toggleTodos} style={{
+                    width: "100%", padding: "12px 16px", borderRadius: "12px",
+                    backgroundColor: cores.fundo, border: "none",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    cursor: "pointer", marginBottom: "12px"
+                  }}>
+                    <span style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro }}>
+                      {gruposSelecionados.size === grupos.length ? "Desmarcar todos" : "Selecionar todos"}
+                    </span>
+                    <div style={{
+                      width: "20px", height: "20px", borderRadius: "6px",
+                      backgroundColor: gruposSelecionados.size === grupos.length ? cores.roxo : "transparent",
+                      border: `2px solid ${gruposSelecionados.size === grupos.length ? cores.roxo : "#ddd"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center"
+                    }}>
+                      {gruposSelecionados.size === grupos.length && <Check size={12} color="white" />}
+                    </div>
+                  </button>
+                )}
+
+                {grupos.length === 0 ? (
+                  <p style={{ color: cores.lavanda, fontSize: "14px", textAlign: "center", padding: "20px 0" }}>Nenhum grupo criado ainda.</p>
+                ) : grupos.map((grupo) => {
+                  const ativo = gruposSelecionados.has(grupo.id)
+                  return (
+                    <button key={grupo.id} onClick={() => toggleGrupo(grupo.id)} style={{
+                      width: "100%", padding: "14px 16px", borderRadius: "14px",
+                      border: `1.5px solid ${ativo ? grupo.cor : "rgba(90,73,151,0.1)"}`,
+                      backgroundColor: ativo ? `${grupo.cor}12` : cores.branco,
+                      display: "flex", alignItems: "center", gap: "12px",
+                      cursor: "pointer", marginBottom: "8px"
+                    }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", backgroundColor: grupo.cor || cores.roxo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Users size={18} color="white" />
+                      </div>
+                      <div style={{ flex: 1, textAlign: "left" }}>
+                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: cores.roxoEscuro }}>{grupo.nome}</p>
+                        <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda }}>
+                          {(grupo.membros?.length || 1) - 1} membro{((grupo.membros?.length || 1) - 1) !== 1 ? "s" : ""} além de você
+                        </p>
+                      </div>
+                      <div style={{
+                        width: "22px", height: "22px", borderRadius: "6px",
+                        backgroundColor: ativo ? grupo.cor : "transparent",
+                        border: `2px solid ${ativo ? grupo.cor : "#ddd"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                      }}>
+                        {ativo && <Check size={13} color="white" />}
+                      </div>
+                    </button>
+                  )
+                })}
+              </>
             )}
 
-            {grupos.length === 0 ? (
-              <p style={{ color: cores.lavanda, fontSize: "14px", textAlign: "center" }}>Nenhum grupo criado ainda.</p>
-            ) : grupos.map((grupo) => {
-              const ativo = gruposSelecionados.has(grupo.id)
-              return (
-                <button key={grupo.id} onClick={() => toggleGrupo(grupo.id)} style={{
-                  width: "100%", padding: "14px 16px", borderRadius: "14px",
-                  border: `1.5px solid ${ativo ? grupo.cor : "rgba(90,73,151,0.1)"}`,
-                  backgroundColor: ativo ? `${grupo.cor}12` : cores.branco,
-                  display: "flex", alignItems: "center", gap: "12px",
-                  cursor: "pointer", marginBottom: "8px"
-                }}>
-                  <div style={{ width: "40px", height: "40px", borderRadius: "10px", backgroundColor: grupo.cor || cores.roxo, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Users size={18} color="white" />
-                  </div>
-                  <div style={{ flex: 1, textAlign: "left" }}>
-                    <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: cores.roxoEscuro }}>{grupo.nome}</p>
-                    <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda }}>
-                      {(grupo.membros?.length || 1) - 1} membro{((grupo.membros?.length || 1) - 1) !== 1 ? "s" : ""} além de você
-                    </p>
-                  </div>
-                  <div style={{
-                    width: "22px", height: "22px", borderRadius: "6px",
-                    backgroundColor: ativo ? grupo.cor : "transparent",
-                    border: `2px solid ${ativo ? grupo.cor : "#ddd"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+            {/* ABA CONTATOS */}
+            {abaModal === "contatos" && (
+              <>
+                {contatos.length > 1 && (
+                  <button onClick={toggleTodosContatos} style={{
+                    width: "100%", padding: "12px 16px", borderRadius: "12px",
+                    backgroundColor: cores.fundo, border: "none",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    cursor: "pointer", marginBottom: "12px"
                   }}>
-                    {ativo && <Check size={13} color="white" />}
-                  </div>
-                </button>
-              )
-            })}
+                    <span style={{ fontSize: "13px", fontWeight: "600", color: cores.roxoEscuro }}>
+                      {contatosSelecionados.size === contatos.length ? "Desmarcar todos" : "Selecionar todos"}
+                    </span>
+                    <div style={{
+                      width: "20px", height: "20px", borderRadius: "6px",
+                      backgroundColor: contatosSelecionados.size === contatos.length ? cores.roxo : "transparent",
+                      border: `2px solid ${contatosSelecionados.size === contatos.length ? cores.roxo : "#ddd"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center"
+                    }}>
+                      {contatosSelecionados.size === contatos.length && <Check size={12} color="white" />}
+                    </div>
+                  </button>
+                )}
+
+                {contatos.length === 0 ? (
+                  <p style={{ color: cores.lavanda, fontSize: "14px", textAlign: "center", padding: "20px 0" }}>Nenhum contato ainda.</p>
+                ) : contatos.map((contato) => {
+                  const ativo = contatosSelecionados.has(contato.id)
+                  return (
+                    <button key={contato.id} onClick={() => toggleContato(contato.id)} style={{
+                      width: "100%", padding: "14px 16px", borderRadius: "14px",
+                      border: `1.5px solid ${ativo ? cores.roxo : "rgba(90,73,151,0.1)"}`,
+                      backgroundColor: ativo ? `${cores.roxo}12` : cores.branco,
+                      display: "flex", alignItems: "center", gap: "12px",
+                      cursor: "pointer", marginBottom: "8px"
+                    }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: cores.roxoClaro, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: cores.roxoEscuro, fontWeight: "700", fontSize: "16px" }}>
+                        {contato.nome?.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, textAlign: "left" }}>
+                        <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: cores.roxoEscuro }}>{contato.nome}</p>
+                      </div>
+                      <div style={{
+                        width: "22px", height: "22px", borderRadius: "6px",
+                        backgroundColor: ativo ? cores.roxo : "transparent",
+                        border: `2px solid ${ativo ? cores.roxo : "#ddd"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                      }}>
+                        {ativo && <Check size={13} color="white" />}
+                      </div>
+                    </button>
+                  )
+                })}
+              </>
+            )}
 
             <button onClick={() => setModalGrupos(false)} style={{
               width: "100%", marginTop: "8px", padding: "14px",
-              backgroundColor: cores.roxo, color: "white",
-              border: "none", borderRadius: "14px",
-              fontSize: "14px", fontWeight: "600", cursor: "pointer"
+              backgroundColor: cores.roxo, color: "white", border: "none",
+              borderRadius: "14px", fontSize: "14px", fontWeight: "600", cursor: "pointer"
             }}>
               Ver no mapa
             </button>

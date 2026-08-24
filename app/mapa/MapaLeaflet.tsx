@@ -66,10 +66,12 @@ function criarIconeCirculo(cor: string, nome: string) {
   })
 }
 
-function CentralizarMapa({ pos, ativo }: { pos: { lat: number; lng: number } | null, ativo: boolean }) {
+function CentralizarMapa({ pos, ativo }: any) {
   const map = useMap()
   useEffect(() => {
-    if (pos && ativo) map.setView([pos.lat, pos.lng], map.getZoom())
+    if (pos && ativo) {
+      map.flyTo([pos.lat, pos.lng], 16, { duration: 1 })
+    }
   }, [ativo])
   return null
 }
@@ -81,12 +83,17 @@ export default function MapaLeaflet({ minhaPos, localizacoes, centralizar, ponto
     <MapContainer
       center={[centro.lat, centro.lng]}
       zoom={15}
+      minZoom={3}
+      maxZoom={18}
+      maxBounds={[[-90, -180], [90, 180]]}
+      maxBoundsViscosity={1.0}
       style={{ width: "100%", height: "100%", zIndex: 0 }}
       zoomControl={false}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        noWrap={true} //mapa nao se repete infinitamente
       />
 
       <CentralizarMapa pos={minhaPos} ativo={centralizar} />
