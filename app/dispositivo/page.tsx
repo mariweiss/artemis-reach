@@ -105,41 +105,40 @@ export default function Dispositivo() {
         if (value === "SOS_ATIVADO" || value.includes("SOS") || value.length > 3) {
           adicionarLog("BOTÃO SOS PRESSIONADO!", "erro")
 
-          navigator.geolocation?.getCurrentPosition(
-            async (pos) => {
-              const { latitude, longitude } = pos.coords
-              adicionarLog("GPS: " + latitude.toFixed(4) + ", " + longitude.toFixed(4), "sucesso")
-              try {
-                const { addDoc, collection } = await import("firebase/firestore")
-                await addDoc(collection(db, "alertas_sos"), {
-                  usuario_id: usuario?.uid || "anonimo",
-                  origem: "dispositivo_echo",
-                  latitude,
-                  longitude,
-                  ativo: true,
-                  mensagem: "Botão SOS do Artemis Echo foi acionado!",
-                  criado_em: new Date().toISOString()
-                })
-                adicionarLog("✓ Alerta salvo no Firebase!", "sucesso")
-              } catch (err: any) {
-                adicionarLog("Erro Firebase: " + err.message, "erro")
+          try {
+            const { addDoc, collection, getDoc, doc } = await import("firebase/firestore")
+
+            // Pega a última localização salva no Firebase (rápido!)
+            let latitude: number | null = null
+            let longitude: number | null = null
+            try {
+              const locSnap = await getDoc(doc(db, "localizacoes", usuario?.uid || ""))
+              if (locSnap.exists()) {
+                const dados = locSnap.data() as any
+                latitude = dados.latitude
+                longitude = dados.longitude
+                adicionarLog("Usando última localização: " + latitude?.toFixed(4) + ", " + longitude?.toFixed(4), "sucesso")
               }
-            },
-            () => {
-              adicionarLog("GPS negado, salvando sem localização...", "aviso")
-              import("firebase/firestore").then(({ addDoc, collection }) => {
-                addDoc(collection(db, "alertas_sos"), {
-                  usuario_id: usuario?.uid || "anonimo",
-                  origem: "dispositivo_echo",
-                  ativo: true,
-                  mensagem: "Botão SOS do Artemis Echo foi acionado!",
-                  criado_em: new Date().toISOString()
-                })
-                  .then(() => adicionarLog("✓ Alerta salvo sem GPS!", "sucesso"))
-                  .catch((e: any) => adicionarLog("Erro: " + e.message, "erro"))
-              })
+            } catch { }
+
+            // Monta o alerta
+            const alerta: any = {
+              usuario_id: usuario?.uid || "anonimo",
+              origem: "dispositivo_echo",
+              ativo: true,
+              mensagem: "Botão SOS do Artemis Echo foi acionado!",
+              criado_em: new Date().toISOString()
             }
-          )
+            if (latitude !== null && longitude !== null) {
+              alerta.latitude = latitude
+              alerta.longitude = longitude
+            }
+
+            await addDoc(collection(db, "alertas_sos"), alerta)
+            adicionarLog("✓ Alerta salvo no Firebase!", "sucesso")
+          } catch (err: any) {
+            adicionarLog("Erro Firebase: " + err.message, "erro")
+          }
         }
       })
 
