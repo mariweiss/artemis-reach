@@ -169,7 +169,7 @@ export default function Circulo() {
   }
 
   async function gerarLinkGrupo(grupo: any) {
-    const link = `${window.location.origin}/entrar-grupo?token=${grupo.token}`
+    const link = `https://artemis-reach.vercel.app/aceitar-convite?token=${token}`
     setLinkGerado(link)
     setModalConviteGrupo(grupo)
     setModalLink(true)
@@ -185,7 +185,7 @@ export default function Circulo() {
       expira_em: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       criado_em: new Date().toISOString()
     })
-    const link = `${window.location.origin}/aceitar-convite?token=${token}`
+    const link = `https://artemis-reach.vercel.app/aceitar-convite?token=${token}`
     setLinkGerado(link)
     setModalConviteGrupo(null)
     setModalLink(true)
