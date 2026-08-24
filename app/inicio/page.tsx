@@ -999,19 +999,20 @@ export default function Inicio() {
             </span>
           </button>
         </div>
-      </div>
 
-      {/* Aviso para manter o app aberto */}
-      <div style={{
-        marginTop: "24px auto 0", padding: "14px 16px", borderRadius: "12px",
-        backgroundColor: "rgba(90,73,151,0.06)",
-        border: `1px solid ${cores.borda}`,
-        display: "flex", alignItems: "center", gap: "10px", maxWidth: "500px", width:"100%", boxSizing: "border-box" 
-      }}>
-        <Shield size={18} color={cores.roxo} style={{ flexShrink: 0 }} />
-        <p style={{ margin: 0, fontSize: "12px", color: cores.textoSecundario, lineHeight: "1.5", flex: 1 }}>
-          Mantenha o Artemis aberto ou minimizado para proteção contínua. Evite fechar o app completamente.
-        </p>
+        {/* Aviso para manter o app aberto */}
+        <div style={{
+          margin: "24px auto 0", padding: "14px 16px", borderRadius: "12px",
+          backgroundColor: "rgba(90,73,151,0.06)",
+          border: `1px solid ${cores.borda}`,
+          display: "flex", alignItems: "center", gap: "10px", maxWidth: "500px", width: "100%", boxSizing: "border-box"
+        }}>
+          <Shield size={18} color={cores.roxo} style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: "12px", color: cores.textoSecundario, lineHeight: "1.5", flex: 1 }}>
+            Mantenha o Artemis aberto ou minimizado para proteção contínua. Evite fechar o app completamente.
+          </p>
+        </div>
+
       </div>
 
       <AvisoBateria />
