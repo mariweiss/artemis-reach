@@ -16,7 +16,8 @@ import {
   Share2,
   AlertCircle,
   VolumeX,
-  Volume2
+  Volume2,
+  Shield
 } from "lucide-react"
 import Header from "../componentes/Header"
 import { useTema } from "../contexts/ThemeContext"
@@ -220,7 +221,7 @@ export default function Inicio() {
             snap.data().nome?.split(" ")[0] || "Usuária"
           )
         }
-      } catch {}
+      } catch { }
     })
 
     return () => unsub()
@@ -507,7 +508,7 @@ export default function Inicio() {
           navigator.share({
             title: "Minha localização",
             text: mensagem,
-          }).catch(() => {})
+          }).catch(() => { })
         } else {
           window.open(
             `https://wa.me/?text=${encodeURIComponent(mensagem)}`,
@@ -577,8 +578,8 @@ export default function Inicio() {
 
           {/* Estado normal */}
           {!contando &&
-          !enviandoSOS &&
-          !sosAtivo ? (
+            !enviandoSOS &&
+            !sosAtivo ? (
 
             <button
               onClick={iniciarSOS}
@@ -859,14 +860,13 @@ export default function Inicio() {
             color:
               modoSilencioso
                 ? (isDark
-                    ? cores.fundo
-                    : "white")
+                  ? cores.fundo
+                  : "white")
                 : cores.texto,
             border:
-              `1.5px solid ${
-                modoSilencioso
-                  ? cores.roxo
-                  : cores.borda
+              `1.5px solid ${modoSilencioso
+                ? cores.roxo
+                : cores.borda
               }`,
             borderRadius: "20px",
             padding: "10px 20px",
@@ -1000,6 +1000,20 @@ export default function Inicio() {
           </button>
         </div>
       </div>
+
+      {/* Aviso para manter o app aberto */}
+      <div style={{
+        marginTop: "24px", padding: "14px 16px", borderRadius: "12px",
+        backgroundColor: "rgba(90,73,151,0.06)",
+        border: `1px solid ${cores.borda}`,
+        display: "flex", alignItems: "center", gap: "10px", maxWidth: "500px"
+      }}>
+        <Shield size={18} color={cores.roxo} style={{ flexShrink: 0 }} />
+        <p style={{ margin: 0, fontSize: "12px", color: cores.textoSecundario, lineHeight: "1.5" }}>
+          Mantenha o Artemis aberto ou minimizado para proteção contínua. Evite fechar o app completamente.
+        </p>
+      </div>
+
       <AvisoBateria />
       {/* Navbar */}
       <div

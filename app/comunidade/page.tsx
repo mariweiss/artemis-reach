@@ -62,12 +62,15 @@ function AbaChat({ usuario, nomeUsuario }: any) {
   const { isDark } = useTema()
   const cores = getCores(isDark)
   const [grupos, setGrupos] = useState<any[]>([])
-  const [grupoSelecionado, setGrupoSelecionado] = useState<any>(null)
+  const [contatos, setContatos] = useState<any[]>([])
+  const [subAba, setSubAba] = useState<"circulos" | "contatos">("circulos")
+  const [chatAtivo, setChatAtivo] = useState<any>(null)
   const [mensagens, setMensagens] = useState<any[]>([])
   const [texto, setTexto] = useState("")
   const [nomesMembros, setNomesMembros] = useState<any>({})
   const bottomRef = useRef<any>(null)
 
+  // Busca grupos
   useEffect(() => {
     if (!usuario) return
     const q = query(collection(db, "grupos"), where("membros", "array-contains", usuario.uid))
@@ -77,17 +80,43 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     return () => unsub()
   }, [usuario])
 
+  // Busca contatos individuais
   useEffect(() => {
-    if (!grupoSelecionado) return
+    if (!usuario) return
     const q = query(
-      collection(db, "grupos", grupoSelecionado.id, "mensagens"),
-      orderBy("criado_em", "asc")
+      collection(db, "circulos"),
+      where("usuarios", "array-contains", usuario.uid),
+      where("status", "==", "confirmado")
     )
+    const unsub = onSnapshot(q, async (snap) => {
+      const lista = await Promise.all(snap.docs.map(async (d) => {
+        const data = d.data() as any
+        const outroId = data.usuarios.find((id: string) => id !== usuario.uid)
+        let nome = "Contato"
+        try {
+          const perfil = await getDoc(doc(db, "usuarios", outroId))
+          if (perfil.exists()) nome = perfil.data()?.nome || "Contato"
+        } catch {}
+        return { id: outroId, nome, circuloId: d.id }
+      }))
+      setContatos(lista)
+    })
+    return () => unsub()
+  }, [usuario])
+
+  // Carrega mensagens do chat ativo
+  useEffect(() => {
+    if (!chatAtivo) return
+
+    const caminho = chatAtivo.tipo === "grupo"
+      ? collection(db, "grupos", chatAtivo.id, "mensagens")
+      : collection(db, "circulos", chatAtivo.circuloId, "mensagens")
+
+    const q = query(caminho, orderBy("criado_em", "asc"))
     const unsub = onSnapshot(q, async (snap) => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       setMensagens(msgs)
 
-      // Busca nomes dos remetentes
       const ids = [...new Set(msgs.map((m: any) => m.usuario_id).filter(Boolean))]
       const novosNomes: any = { ...nomesMembros }
       await Promise.all(ids.map(async (id: any) => {
@@ -102,11 +131,16 @@ function AbaChat({ usuario, nomeUsuario }: any) {
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
     })
     return () => unsub()
-  }, [grupoSelecionado])
+  }, [chatAtivo])
 
   async function enviarMensagem() {
-    if (!texto.trim() || !grupoSelecionado) return
-    await addDoc(collection(db, "grupos", grupoSelecionado.id, "mensagens"), {
+    if (!texto.trim() || !chatAtivo) return
+
+    const caminho = chatAtivo.tipo === "grupo"
+      ? collection(db, "grupos", chatAtivo.id, "mensagens")
+      : collection(db, "circulos", chatAtivo.circuloId, "mensagens")
+
+    await addDoc(caminho, {
       texto: filtrarTexto(texto),
       usuario_id: usuario.uid,
       nome: nomeUsuario,
@@ -115,47 +149,97 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     setTexto("")
   }
 
-  if (!grupoSelecionado) return (
+  // ─── LISTA DE CHATS ───
+  if (!chatAtivo) return (
     <div style={{ padding: "16px" }}>
-      <p style={{ fontSize: "13px", fontWeight: "700", color: cores.roxoEscuro, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-        Seus círculos
-      </p>
-      {grupos.length === 0 ? (
-        <div style={{ backgroundColor: cores.branco, borderRadius: "16px", padding: "32px", textAlign: "center", boxShadow: "0 1px 6px rgba(90,73,151,0.07)" }}>
-          <Users size={36} color={cores.roxoClaro} style={{ marginBottom: "10px" }} />
-          <p style={{ color: cores.lavanda, fontSize: "14px", margin: 0 }}>Nenhum grupo ainda.</p>
-          <p style={{ color: "#bbb", fontSize: "12px", marginTop: "6px" }}>Crie grupos na aba Círculo.</p>
-        </div>
-      ) : grupos.map(grupo => (
-        <div key={grupo.id} onClick={() => setGrupoSelecionado(grupo)} style={{
-          backgroundColor: cores.branco, borderRadius: "14px", padding: "14px 16px",
-          marginBottom: "10px", display: "flex", alignItems: "center", gap: "12px",
-          cursor: "pointer", boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
+      {/* Sub-abas */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+        <button onClick={() => setSubAba("circulos")} style={{
+          flex: 1, padding: "10px", borderRadius: "12px", border: "none", cursor: "pointer",
+          fontSize: "13px", fontWeight: "600",
+          backgroundColor: subAba === "circulos" ? cores.roxo : cores.branco,
+          color: subAba === "circulos" ? "white" : cores.lavanda,
+          boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
         }}>
-          <div style={{ width: "46px", height: "46px", borderRadius: "12px", backgroundColor: grupo.cor || cores.roxo, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Users size={22} color="white" />
+          Seus Círculos
+        </button>
+        <button onClick={() => setSubAba("contatos")} style={{
+          flex: 1, padding: "10px", borderRadius: "12px", border: "none", cursor: "pointer",
+          fontSize: "13px", fontWeight: "600",
+          backgroundColor: subAba === "contatos" ? cores.roxo : cores.branco,
+          color: subAba === "contatos" ? "white" : cores.lavanda,
+          boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
+        }}>
+          Seus Contatos
+        </button>
+      </div>
+
+      {/* CÍRCULOS */}
+      {subAba === "circulos" && (
+        grupos.length === 0 ? (
+          <div style={{ backgroundColor: cores.branco, borderRadius: "16px", padding: "32px", textAlign: "center", boxShadow: "0 1px 6px rgba(90,73,151,0.07)" }}>
+            <Users size={36} color={cores.roxoClaro} style={{ marginBottom: "10px" }} />
+            <p style={{ color: cores.lavanda, fontSize: "14px", margin: 0 }}>Nenhum grupo ainda.</p>
+            <p style={{ color: "#bbb", fontSize: "12px", marginTop: "6px" }}>Crie grupos na aba Círculo.</p>
           </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontWeight: "700", fontSize: "15px", color: cores.roxoEscuro }}>{grupo.nome}</p>
-            <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda }}>{grupo.membros?.length || 0} membros</p>
+        ) : grupos.map(grupo => (
+          <div key={grupo.id} onClick={() => setChatAtivo({ tipo: "grupo", id: grupo.id, nome: grupo.nome, cor: grupo.cor, membros: grupo.membros })} style={{
+            backgroundColor: cores.branco, borderRadius: "14px", padding: "14px 16px",
+            marginBottom: "10px", display: "flex", alignItems: "center", gap: "12px",
+            cursor: "pointer", boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
+          }}>
+            <div style={{ width: "46px", height: "46px", borderRadius: "12px", backgroundColor: grupo.cor || cores.roxo, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Users size={22} color="white" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontWeight: "700", fontSize: "15px", color: cores.roxoEscuro }}>{grupo.nome}</p>
+              <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda }}>{grupo.membros?.length || 0} membros</p>
+            </div>
+            <ChevronRight size={18} color={cores.lavanda} />
           </div>
-          <ChevronRight size={18} color={cores.lavanda} />
-        </div>
-      ))}
+        ))
+      )}
+
+      {/* CONTATOS */}
+      {subAba === "contatos" && (
+        contatos.length === 0 ? (
+          <div style={{ backgroundColor: cores.branco, borderRadius: "16px", padding: "32px", textAlign: "center", boxShadow: "0 1px 6px rgba(90,73,151,0.07)" }}>
+            <Users size={36} color={cores.roxoClaro} style={{ marginBottom: "10px" }} />
+            <p style={{ color: cores.lavanda, fontSize: "14px", margin: 0 }}>Nenhum contato ainda.</p>
+            <p style={{ color: "#bbb", fontSize: "12px", marginTop: "6px" }}>Adicione contatos na aba Círculo.</p>
+          </div>
+        ) : contatos.map(contato => (
+          <div key={contato.id} onClick={() => setChatAtivo({ tipo: "contato", id: contato.id, nome: contato.nome, circuloId: contato.circuloId })} style={{
+            backgroundColor: cores.branco, borderRadius: "14px", padding: "14px 16px",
+            marginBottom: "10px", display: "flex", alignItems: "center", gap: "12px",
+            cursor: "pointer", boxShadow: "0 1px 4px rgba(90,73,151,0.06)"
+          }}>
+            <div style={{ width: "46px", height: "46px", borderRadius: "50%", backgroundColor: cores.roxoClaro, display: "flex", alignItems: "center", justifyContent: "center", color: cores.roxoEscuro, fontWeight: "700", fontSize: "18px" }}>
+              {contato.nome?.charAt(0).toUpperCase()}
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontWeight: "700", fontSize: "15px", color: cores.roxoEscuro }}>{contato.nome}</p>
+              <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda }}>Toque para conversar</p>
+            </div>
+            <ChevronRight size={18} color={cores.lavanda} />
+          </div>
+        ))
+      )}
     </div>
   )
 
+  // ─── CONVERSA ABERTA ───
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 220px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 240px)" }}>
       {/* Header do chat */}
       <div style={{ padding: "12px 16px", backgroundColor: cores.branco, borderBottom: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "10px" }}>
-        <button onClick={() => setGrupoSelecionado(null)} style={{ background: "none", border: "none", cursor: "pointer", color: cores.roxo, fontSize: "20px" }}>←</button>
-        <div style={{ width: "36px", height: "36px", borderRadius: "10px", backgroundColor: grupoSelecionado.cor || cores.roxo, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Users size={18} color="white" />
+        <button onClick={() => setChatAtivo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: cores.roxo, fontSize: "20px" }}>←</button>
+        <div style={{ width: "36px", height: "36px", borderRadius: chatAtivo.tipo === "grupo" ? "10px" : "50%", backgroundColor: chatAtivo.tipo === "grupo" ? (chatAtivo.cor || cores.roxo) : cores.roxoClaro, display: "flex", alignItems: "center", justifyContent: "center", color: cores.roxoEscuro, fontWeight: "700" }}>
+          {chatAtivo.tipo === "grupo" ? <Users size={18} color="white" /> : chatAtivo.nome?.charAt(0).toUpperCase()}
         </div>
         <div>
-          <p style={{ margin: 0, fontWeight: "700", fontSize: "14px", color: cores.roxoEscuro }}>{grupoSelecionado.nome}</p>
-          <p style={{ margin: 0, fontSize: "11px", color: cores.lavanda }}>{grupoSelecionado.membros?.length || 0} membros</p>
+          <p style={{ margin: 0, fontWeight: "700", fontSize: "14px", color: cores.roxoEscuro }}>{chatAtivo.nome}</p>
+          {chatAtivo.tipo === "grupo" && <p style={{ margin: 0, fontSize: "11px", color: cores.lavanda }}>{chatAtivo.membros?.length || 0} membros</p>}
         </div>
       </div>
 
@@ -170,7 +254,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
           const minha = msg.usuario_id === usuario?.uid
           return (
             <div key={msg.id} style={{ display: "flex", flexDirection: "column", alignItems: minha ? "flex-end" : "flex-start" }}>
-              {!minha && (
+              {!minha && chatAtivo.tipo === "grupo" && (
                 <p style={{ margin: "0 0 2px 8px", fontSize: "11px", color: cores.lavanda, fontWeight: "600" }}>
                   {nomesMembros[msg.usuario_id] || msg.nome || "Usuária"}
                 </p>
@@ -195,12 +279,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 
       {/* Input */}
       <div style={{ padding: "12px 16px", backgroundColor: cores.branco, borderTop: `1px solid ${cores.fundo}`, display: "flex", alignItems: "center", gap: "8px" }}>
-        <button style={{ background: "none", border: "none", cursor: "pointer" }}>
-          <Paperclip size={20} color={cores.lavanda} />
-        </button>
-        <button style={{ background: "none", border: "none", cursor: "pointer" }}>
-          <Image size={20} color={cores.lavanda} />
-        </button>
         <input
           placeholder="Digite uma mensagem..."
           value={texto}
@@ -215,7 +293,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
         <button onClick={enviarMensagem} style={{
           width: "40px", height: "40px", borderRadius: "50%",
           backgroundColor: cores.roxo, border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center"
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
         }}>
           <Send size={18} color="white" />
         </button>
@@ -533,7 +611,7 @@ export default function Comunidade() {
   }, [])
 
   const abas = [
-    { id: "chat", label: "Chat do Círculo" },
+    { id: "chat", label: "Chats" },
     { id: "comunidade", label: "Comunidade" },
     { id: "parceiros", label: "Parceiros" },
   ]
