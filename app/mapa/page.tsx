@@ -66,22 +66,16 @@ export default function Mapa() {
   useEffect(() => {
     if (!usuarioId) return
 
-    let parar: any = null
+    // Lê a própria localização do Firebase (salva pelo useLocalizacao global)
+    const unsub = onSnapshot(doc(db, "localizacoes", usuarioId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any
+        setMinhaPos({ lat: data.latitude, lng: data.longitude })
+        setStatus("Localização em tempo real ativa")
+      }
+    })
 
-    async function iniciar() {
-      const { iniciarRastreamento } = await import("../utils/localizacao")
-      parar = await iniciarRastreamento(
-        (lat: number, lng: number) => {
-          setMinhaPos({ lat, lng })
-          setStatus("Localização em tempo real ativa")
-        },
-        () => setStatus("Permissão de localização negada")
-      )
-    }
-
-    iniciar()
-
-    return () => { if (parar) parar() }
+    return () => unsub()
   }, [usuarioId])
 
   useEffect(() => {

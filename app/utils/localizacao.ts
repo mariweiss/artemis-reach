@@ -23,6 +23,7 @@ export async function iniciarRastreamento(
         distanceFilter: 3,
       },
       (location: any, error: any) => {
+        console.log("GPS BACKGROUND CALLBACK:", location, error)
         if (error) {
           if (onErro) onErro()
           return
@@ -40,7 +41,7 @@ export async function iniciarRastreamento(
     // ─── SITE (NAVEGADOR) ───
     if (!navigator.geolocation) {
       if (onErro) onErro()
-      return () => {}
+      return () => { }
     }
 
     const watchId = navigator.geolocation.watchPosition(
