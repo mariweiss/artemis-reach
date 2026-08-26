@@ -28,23 +28,24 @@ export default function AvisoBateria() {
     setMostrar(false)
     try {
       localStorage.setItem("aviso-bateria-dispensado", "true")
-    } catch {}
+    } catch { }
   }
 
   async function abrirConfiguracoes() {
-  try {
-    const { AppLauncher } = await import("@capacitor/app-launcher")
-    await AppLauncher.openUrl({
-      url: "android-app://com.android.settings/.applications.InstalledAppDetails?package=com.artemis.reach"
-    })
-  } catch {
     try {
       const { AppLauncher } = await import("@capacitor/app-launcher")
-      await AppLauncher.openUrl({ url: "package:com.artemis.reach" })
-    } catch {}
+      // Abre direto as configurações de otimização de bateria do Android
+      await AppLauncher.openUrl({
+        url: "intent:#Intent;action=android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS;end"
+      })
+    } catch {
+      try {
+        const { AppLauncher } = await import("@capacitor/app-launcher")
+        await AppLauncher.openUrl({ url: "package:com.artemis.reach" })
+      } catch { }
+    }
+    dispensar()
   }
-  dispensar()
-}
 
   if (!mostrar) return null
 

@@ -16,16 +16,18 @@ export async function iniciarRastreamento(
 
     const watcherId = await BackgroundGeolocation.addWatcher(
       {
-        backgroundMessage: "Artemis está protegendo você",
-        backgroundTitle: "Localização ativa",
+        backgroundMessage: "Sua localização está sendo compartilhada com seu círculo de segurança.",
+        backgroundTitle: "Artemis protegendo você",
         requestPermissions: true,
-        stale: false,
-        distanceFilter: 3,
+        stale: true,
+        distanceFilter: 0,
       },
       (location: any, error: any) => {
         console.log("GPS BACKGROUND CALLBACK:", location, error)
         if (error) {
-          if (onErro) onErro()
+          if (error.code === "NOT_AUTHORIZED") {
+            if (onErro) onErro()
+          }
           return
         }
         if (location) {
