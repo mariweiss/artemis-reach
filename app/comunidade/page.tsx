@@ -30,71 +30,47 @@ const nav = [
 const TIPOS = [
   { valor: "relato", label: "Relato", cor: "#5A4997", fundo: "rgba(90,73,151,0.1)" },
   { valor: "alerta", label: "Alerta", cor: "#dc2626", fundo: "rgba(220,38,38,0.1)" },
-  { valor: "ajuda", label: "Pedido de Ajuda", cor: "#d97706", fundo: "rgba(217,119,6,0.1)" }
+  { valor: "ajuda", label: "Pedido de Ajuda", cor: "#d97706", fundo: "rgba(217,119,6,0.1)" },
 ]
 
-const PALAVRAS_PROIBIDAS = [
-  "idiota",
-  "imbecil",
-  "burra",
-  "estúpida",
-  "lixo"
-]
+const PALAVRAS_PROIBIDAS = ["idiota", "imbecil", "burra", "estúpida", "lixo"]
 
 function filtrarTexto(texto: string) {
   let resultado = texto
-
   PALAVRAS_PROIBIDAS.forEach(p => {
     resultado = resultado.replace(new RegExp(p, "gi"), "***")
   })
-
   return resultado
 }
 
 function formatarData(timestamp: any) {
   if (!timestamp?.seconds) return "agora"
-
-  const diff = Math.floor(
-    (Date.now() - timestamp.seconds * 1000) / 60000
-  )
-
+  const diff = Math.floor((Date.now() - timestamp.seconds * 1000) / 60000)
   if (diff < 1) return "agora"
   if (diff < 60) return `${diff}min atrás`
   if (diff < 1440) return `${Math.floor(diff / 60)}h atrás`
-
   return `${Math.floor(diff / 1440)}d atrás`
 }
 
 function formatarHora(timestamp: any) {
   if (!timestamp?.seconds) return ""
-
-  return new Date(
-    timestamp.seconds * 1000
-  ).toLocaleTimeString("pt-BR", {
+  return new Date(timestamp.seconds * 1000).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit"
   })
 }
 
-
-// ─────────────────────────────────────────────
-// ABA CHAT
-// ─────────────────────────────────────────────
-
+// ─── ABA CHAT ───
 function AbaChat({ usuario, nomeUsuario }: any) {
   const { isDark } = useTema()
   const cores = getCores(isDark)
-
   const [grupos, setGrupos] = useState<any[]>([])
   const [contatos, setContatos] = useState<any[]>([])
-  const [subAba, setSubAba] =
-    useState<"circulos" | "contatos">("circulos")
-
+  const [subAba, setSubAba] = useState<"circulos" | "contatos">("circulos")
   const [chatAtivo, setChatAtivo] = useState<any>(null)
   const [mensagens, setMensagens] = useState<any[]>([])
   const [texto, setTexto] = useState("")
   const [nomesMembros, setNomesMembros] = useState<any>({})
-
   const bottomRef = useRef<any>(null)
 
   // Busca grupos
@@ -107,12 +83,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     )
 
     const unsub = onSnapshot(q, (snap) => {
-      setGrupos(
-        snap.docs.map(d => ({
-          id: d.id,
-          ...d.data()
-        }))
-      )
+      setGrupos(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
 
     return () => unsub()
@@ -132,18 +103,12 @@ function AbaChat({ usuario, nomeUsuario }: any) {
       const lista = await Promise.all(
         snap.docs.map(async (d) => {
           const data = d.data() as any
-
-          const outroId = data.usuarios.find(
-            (id: string) => id !== usuario.uid
-          )
+          const outroId = data.usuarios.find((id: string) => id !== usuario.uid)
 
           let nome = "Contato"
 
           try {
-            const perfil = await getDoc(
-              doc(db, "usuarios", outroId)
-            )
-
+            const perfil = await getDoc(doc(db, "usuarios", outroId))
             if (perfil.exists()) {
               nome = perfil.data()?.nome || "Contato"
             }
@@ -167,25 +132,11 @@ function AbaChat({ usuario, nomeUsuario }: any) {
   useEffect(() => {
     if (!chatAtivo) return
 
-    const caminho =
-      chatAtivo.tipo === "grupo"
-        ? collection(
-            db,
-            "grupos",
-            chatAtivo.id,
-            "mensagens"
-          )
-        : collection(
-            db,
-            "circulos",
-            chatAtivo.circuloId,
-            "mensagens"
-          )
+    const caminho = chatAtivo.tipo === "grupo"
+      ? collection(db, "grupos", chatAtivo.id, "mensagens")
+      : collection(db, "circulos", chatAtivo.circuloId, "mensagens")
 
-    const q = query(
-      caminho,
-      orderBy("criado_em", "asc")
-    )
+    const q = query(caminho, orderBy("criado_em", "asc"))
 
     const unsub = onSnapshot(q, async (snap) => {
       const msgs = snap.docs.map(d => ({
@@ -203,21 +154,15 @@ function AbaChat({ usuario, nomeUsuario }: any) {
         )
       ]
 
-      const novosNomes: any = {
-        ...nomesMembros
-      }
+      const novosNomes: any = { ...nomesMembros }
 
       await Promise.all(
         ids.map(async (id: any) => {
           if (!novosNomes[id]) {
             try {
-              const perfil = await getDoc(
-                doc(db, "usuarios", id)
-              )
-
+              const perfil = await getDoc(doc(db, "usuarios", id))
               novosNomes[id] =
-                perfil.data()?.nome?.split(" ")[0] ||
-                "Usuária"
+                perfil.data()?.nome?.split(" ")[0] || "Usuária"
             } catch {
               novosNomes[id] = "Usuária"
             }
@@ -240,20 +185,9 @@ function AbaChat({ usuario, nomeUsuario }: any) {
   async function enviarMensagem() {
     if (!texto.trim() || !chatAtivo) return
 
-    const caminho =
-      chatAtivo.tipo === "grupo"
-        ? collection(
-            db,
-            "grupos",
-            chatAtivo.id,
-            "mensagens"
-          )
-        : collection(
-            db,
-            "circulos",
-            chatAtivo.circuloId,
-            "mensagens"
-          )
+    const caminho = chatAtivo.tipo === "grupo"
+      ? collection(db, "grupos", chatAtivo.id, "mensagens")
+      : collection(db, "circulos", chatAtivo.circuloId, "mensagens")
 
     await addDoc(caminho, {
       texto: filtrarTexto(texto),
@@ -265,19 +199,17 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     setTexto("")
   }
 
-  // Lista de chats
+  // ─── LISTA DE CHATS ───
   if (!chatAtivo) {
     return (
       <div style={{ padding: "16px" }}>
 
         {/* Sub-abas */}
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            marginBottom: "16px"
-          }}
-        >
+        <div style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "16px"
+        }}>
           <button
             onClick={() => setSubAba("circulos")}
             style={{
@@ -332,39 +264,32 @@ function AbaChat({ usuario, nomeUsuario }: any) {
         {/* CÍRCULOS */}
         {subAba === "circulos" && (
           grupos.length === 0 ? (
-            <div
-              style={{
-                backgroundColor: cores.branco,
-                borderRadius: "16px",
-                padding: "32px",
-                textAlign: "center",
-                boxShadow:
-                  "0 1px 6px rgba(90,73,151,0.07)"
-              }}
-            >
+            <div style={{
+              backgroundColor: cores.branco,
+              borderRadius: "16px",
+              padding: "32px",
+              textAlign: "center",
+              boxShadow: "0 1px 6px rgba(90,73,151,0.07)"
+            }}>
               <Users
                 size={36}
                 color={cores.roxoClaro}
                 style={{ marginBottom: "10px" }}
               />
 
-              <p
-                style={{
-                  color: cores.lavanda,
-                  fontSize: "14px",
-                  margin: 0
-                }}
-              >
+              <p style={{
+                color: cores.lavanda,
+                fontSize: "14px",
+                margin: 0
+              }}>
                 Nenhum grupo ainda.
               </p>
 
-              <p
-                style={{
-                  color: "#bbb",
-                  fontSize: "12px",
-                  marginTop: "6px"
-                }}
-              >
+              <p style={{
+                color: "#bbb",
+                fontSize: "12px",
+                marginTop: "6px"
+              }}>
                 Crie grupos na aba Círculo.
               </p>
             </div>
@@ -394,43 +319,34 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                     "0 1px 4px rgba(90,73,151,0.06)"
                 }}
               >
-                <div
-                  style={{
-                    width: "46px",
-                    height: "46px",
-                    borderRadius: "12px",
-                    backgroundColor:
-                      grupo.cor || cores.roxo,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}
-                >
-                  <Users
-                    size={22}
-                    color="white"
-                  />
+                <div style={{
+                  width: "46px",
+                  height: "46px",
+                  borderRadius: "12px",
+                  backgroundColor:
+                    grupo.cor || cores.roxo,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <Users size={22} color="white" />
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontWeight: "700",
-                      fontSize: "15px",
-                      color: cores.roxoEscuro
-                    }}
-                  >
+                  <p style={{
+                    margin: 0,
+                    fontWeight: "700",
+                    fontSize: "15px",
+                    color: cores.roxoEscuro
+                  }}>
                     {grupo.nome}
                   </p>
 
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "12px",
-                      color: cores.lavanda
-                    }}
-                  >
+                  <p style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: cores.lavanda
+                  }}>
                     {grupo.membros?.length || 0} membros
                   </p>
                 </div>
@@ -447,39 +363,33 @@ function AbaChat({ usuario, nomeUsuario }: any) {
         {/* CONTATOS */}
         {subAba === "contatos" && (
           contatos.length === 0 ? (
-            <div
-              style={{
-                backgroundColor: cores.branco,
-                borderRadius: "16px",
-                padding: "32px",
-                textAlign: "center",
-                boxShadow:
-                  "0 1px 6px rgba(90,73,151,0.07)"
-              }}
-            >
+            <div style={{
+              backgroundColor: cores.branco,
+              borderRadius: "16px",
+              padding: "32px",
+              textAlign: "center",
+              boxShadow:
+                "0 1px 6px rgba(90,73,151,0.07)"
+            }}>
               <Users
                 size={36}
                 color={cores.roxoClaro}
                 style={{ marginBottom: "10px" }}
               />
 
-              <p
-                style={{
-                  color: cores.lavanda,
-                  fontSize: "14px",
-                  margin: 0
-                }}
-              >
+              <p style={{
+                color: cores.lavanda,
+                fontSize: "14px",
+                margin: 0
+              }}>
                 Nenhum contato ainda.
               </p>
 
-              <p
-                style={{
-                  color: "#bbb",
-                  fontSize: "12px",
-                  marginTop: "6px"
-                }}
-              >
+              <p style={{
+                color: "#bbb",
+                fontSize: "12px",
+                marginTop: "6px"
+              }}>
                 Adicione contatos na aba Círculo.
               </p>
             </div>
@@ -508,44 +418,36 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                     "0 1px 4px rgba(90,73,151,0.06)"
                 }}
               >
-                <div
-                  style={{
-                    width: "46px",
-                    height: "46px",
-                    borderRadius: "50%",
-                    backgroundColor: cores.roxoClaro,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: cores.roxoEscuro,
-                    fontWeight: "700",
-                    fontSize: "18px"
-                  }}
-                >
-                  {contato.nome
-                    ?.charAt(0)
-                    .toUpperCase()}
+                <div style={{
+                  width: "46px",
+                  height: "46px",
+                  borderRadius: "50%",
+                  backgroundColor: cores.roxoClaro,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: cores.roxoEscuro,
+                  fontWeight: "700",
+                  fontSize: "18px"
+                }}>
+                  {contato.nome?.charAt(0).toUpperCase()}
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontWeight: "700",
-                      fontSize: "15px",
-                      color: cores.roxoEscuro
-                    }}
-                  >
+                  <p style={{
+                    margin: 0,
+                    fontWeight: "700",
+                    fontSize: "15px",
+                    color: cores.roxoEscuro
+                  }}>
                     {contato.nome}
                   </p>
 
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "12px",
-                      color: cores.lavanda
-                    }}
-                  >
+                  <p style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: cores.lavanda
+                  }}>
                     Toque para conversar
                   </p>
                 </div>
@@ -562,27 +464,23 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     )
   }
 
-  // Conversa aberta
+  // ─── CONVERSA ABERTA ───
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "calc(100vh - 180px)"
-      }}
-    >
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      height: "calc(100vh - 180px)"
+    }}>
+
       {/* Header do chat */}
-      <div
-        style={{
-          padding: "12px 16px",
-          backgroundColor: cores.branco,
-          borderBottom:
-            `1px solid ${cores.fundo}`,
-          display: "flex",
-          alignItems: "center",
-          gap: "10px"
-        }}
-      >
+      <div style={{
+        padding: "12px 16px",
+        backgroundColor: cores.branco,
+        borderBottom: `1px solid ${cores.fundo}`,
+        display: "flex",
+        alignItems: "center",
+        gap: "10px"
+      }}>
         <button
           onClick={() => setChatAtivo(null)}
           style={{
@@ -596,52 +494,45 @@ function AbaChat({ usuario, nomeUsuario }: any) {
           ←
         </button>
 
-        <div
-          style={{
-            width: "36px",
-            height: "36px",
-            borderRadius:
-              chatAtivo.tipo === "grupo"
-                ? "10px"
-                : "50%",
-            backgroundColor:
-              chatAtivo.tipo === "grupo"
-                ? chatAtivo.cor || cores.roxo
-                : cores.roxoClaro,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: cores.roxoEscuro,
-            fontWeight: "700"
-          }}
-        >
+        <div style={{
+          width: "36px",
+          height: "36px",
+          borderRadius:
+            chatAtivo.tipo === "grupo"
+              ? "10px"
+              : "50%",
+          backgroundColor:
+            chatAtivo.tipo === "grupo"
+              ? (chatAtivo.cor || cores.roxo)
+              : cores.roxoClaro,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: cores.roxoEscuro,
+          fontWeight: "700"
+        }}>
           {chatAtivo.tipo === "grupo"
             ? <Users size={18} color="white" />
-            : chatAtivo.nome
-                ?.charAt(0)
-                .toUpperCase()}
+            : chatAtivo.nome?.charAt(0).toUpperCase()
+          }
         </div>
 
         <div>
-          <p
-            style={{
-              margin: 0,
-              fontWeight: "700",
-              fontSize: "14px",
-              color: cores.roxoEscuro
-            }}
-          >
+          <p style={{
+            margin: 0,
+            fontWeight: "700",
+            fontSize: "14px",
+            color: cores.roxoEscuro
+          }}>
             {chatAtivo.nome}
           </p>
 
           {chatAtivo.tipo === "grupo" && (
-            <p
-              style={{
-                margin: 0,
-                fontSize: "11px",
-                color: cores.lavanda
-              }}
-            >
+            <p style={{
+              margin: 0,
+              fontSize: "11px",
+              color: cores.lavanda
+            }}>
               {chatAtivo.membros?.length || 0} membros
             </p>
           )}
@@ -649,25 +540,21 @@ function AbaChat({ usuario, nomeUsuario }: any) {
       </div>
 
       {/* Mensagens */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px"
-        }}
-      >
+      <div style={{
+        flex: 1,
+        overflowY: "auto",
+        padding: "16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px"
+      }}>
         {mensagens.length === 0 && (
-          <p
-            style={{
-              textAlign: "center",
-              color: cores.lavanda,
-              fontSize: "13px",
-              marginTop: "32px"
-            }}
-          >
+          <p style={{
+            textAlign: "center",
+            color: cores.lavanda,
+            fontSize: "13px",
+            marginTop: "32px"
+          }}>
             Nenhuma mensagem ainda. Diga olá! 👋
           </p>
         )}
@@ -690,63 +577,54 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             >
               {!minha &&
                 chatAtivo.tipo === "grupo" && (
-                  <p
-                    style={{
-                      margin: "0 0 2px 8px",
-                      fontSize: "11px",
-                      color: cores.lavanda,
-                      fontWeight: "600"
-                    }}
-                  >
-                    {nomesMembros[
-                      msg.usuario_id
-                    ] ||
+                  <p style={{
+                    margin: "0 0 2px 8px",
+                    fontSize: "11px",
+                    color: cores.lavanda,
+                    fontWeight: "600"
+                  }}>
+                    {nomesMembros[msg.usuario_id] ||
                       msg.nome ||
                       "Usuária"}
                   </p>
                 )}
 
-              <div
-                style={{
-                  maxWidth: "75%",
-                  padding: "10px 14px",
-                  borderRadius: minha
+              <div style={{
+                maxWidth: "75%",
+                padding: "10px 14px",
+                borderRadius:
+                  minha
                     ? "18px 18px 4px 18px"
                     : "18px 18px 18px 4px",
-                  backgroundColor:
+                backgroundColor:
+                  minha
+                    ? cores.roxo
+                    : cores.branco,
+                boxShadow:
+                  "0 1px 4px rgba(90,73,151,0.1)"
+              }}>
+                <p style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  color:
                     minha
-                      ? cores.roxo
-                      : cores.branco,
-                  boxShadow:
-                    "0 1px 4px rgba(90,73,151,0.1)"
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "14px",
-                    color: minha
                       ? "white"
                       : cores.roxoEscuro,
-                    lineHeight: "1.4"
-                  }}
-                >
+                  lineHeight: "1.4"
+                }}>
                   {msg.texto}
                 </p>
 
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    fontSize: "10px",
-                    color: minha
+                <p style={{
+                  margin: "4px 0 0",
+                  fontSize: "10px",
+                  color:
+                    minha
                       ? "rgba(255,255,255,0.7)"
                       : "#bbb",
-                    textAlign: "right"
-                  }}
-                >
-                  {formatarHora(
-                    msg.criado_em
-                  )}
+                  textAlign: "right"
+                }}>
+                  {formatarHora(msg.criado_em)}
                 </p>
               </div>
             </div>
@@ -757,33 +635,26 @@ function AbaChat({ usuario, nomeUsuario }: any) {
       </div>
 
       {/* Input */}
-      <div
-        style={{
-          padding: "12px 16px",
-          backgroundColor: cores.branco,
-          borderTop:
-            `1px solid ${cores.fundo}`,
-          display: "flex",
-          alignItems: "center",
-          gap: "8px"
-        }}
-      >
+      <div style={{
+        padding: "12px 16px",
+        backgroundColor: cores.branco,
+        borderTop: `1px solid ${cores.fundo}`,
+        display: "flex",
+        alignItems: "center",
+        gap: "8px"
+      }}>
         <input
           placeholder="Digite uma mensagem..."
           value={texto}
-          onChange={(e) =>
-            setTexto(e.target.value)
-          }
+          onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) =>
-            e.key === "Enter" &&
-            enviarMensagem()
+            e.key === "Enter" && enviarMensagem()
           }
           style={{
             flex: 1,
             padding: "10px 14px",
             borderRadius: "20px",
-            border:
-              "1.5px solid #E8E0F5",
+            border: "1.5px solid #E8E0F5",
             outline: "none",
             fontSize: "14px",
             color: "#333",
@@ -806,21 +677,14 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             flexShrink: 0
           }}
         >
-          <Send
-            size={18}
-            color="white"
-          />
+          <Send size={18} color="white" />
         </button>
       </div>
     </div>
   )
 }
 
-
-// ─────────────────────────────────────────────
-// ABA COMUNIDADE
-// ─────────────────────────────────────────────
-
+// ─── ABA COMUNIDADE ───
 function AbaComunidade({ usuario, nomeUsuario }: any) {
   const { isDark } = useTema()
   const cores = getCores(isDark)
@@ -917,29 +781,21 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   async function publicar() {
     if (!texto.trim()) return
 
-    await addDoc(
-      collection(db, "posts"),
-      {
-        texto: filtrarTexto(texto),
-        tipo,
-        anonimo,
-        localizacao:
-          localizacao || null,
-        nome: anonimo
-          ? "Anônimo"
-          : nomeUsuario,
-        usuario_id: anonimo
-          ? null
-          : usuario?.uid,
-        curtidas: 0,
-        curtidas_por: [],
-        confirmacoes: 0,
-        confirmacoes_por: [],
-        denuncias: 0,
-        comentarios: 0,
-        criado_em: serverTimestamp()
-      }
-    )
+    await addDoc(collection(db, "posts"), {
+      texto: filtrarTexto(texto),
+      tipo,
+      anonimo,
+      localizacao: localizacao || null,
+      nome: anonimo ? "Anônimo" : nomeUsuario,
+      usuario_id: anonimo ? null : usuario?.uid,
+      curtidas: 0,
+      curtidas_por: [],
+      confirmacoes: 0,
+      confirmacoes_por: [],
+      denuncias: 0,
+      comentarios: 0,
+      criado_em: serverTimestamp()
+    })
 
     setTexto("")
     setTipo("relato")
@@ -954,23 +810,17 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   ) {
     if (!usuario) return
 
-    const ref = doc(
-      db,
-      "posts",
-      postId
-    )
+    const ref = doc(db, "posts", postId)
 
     if (jaGostou) {
       await updateDoc(ref, {
         curtidas: increment(-1),
-        curtidas_por:
-          arrayRemove(usuario.uid)
+        curtidas_por: arrayRemove(usuario.uid)
       })
     } else {
       await updateDoc(ref, {
         curtidas: increment(1),
-        curtidas_por:
-          arrayUnion(usuario.uid)
+        curtidas_por: arrayUnion(usuario.uid)
       })
     }
   }
@@ -981,30 +831,22 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   ) {
     if (!usuario) return
 
-    const ref = doc(
-      db,
-      "posts",
-      postId
-    )
+    const ref = doc(db, "posts", postId)
 
     if (jaConfirmou) {
       await updateDoc(ref, {
         confirmacoes: increment(-1),
-        confirmacoes_por:
-          arrayRemove(usuario.uid)
+        confirmacoes_por: arrayRemove(usuario.uid)
       })
     } else {
       await updateDoc(ref, {
         confirmacoes: increment(1),
-        confirmacoes_por:
-          arrayUnion(usuario.uid)
+        confirmacoes_por: arrayUnion(usuario.uid)
       })
     }
   }
 
-  async function denunciar(
-    postId: string
-  ) {
+  async function denunciar(postId: string) {
     await updateDoc(
       doc(db, "posts", postId),
       {
@@ -1015,9 +857,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
     alert("Post denunciado.")
   }
 
-  async function carregarComentarios(
-    postId: string
-  ) {
+  async function carregarComentarios(postId: string) {
     if (postComentando === postId) {
       setPostComentando(null)
       return
@@ -1036,24 +876,17 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
     )
 
     onSnapshot(q, (snap) => {
-      setComentarios(
-        (prev: any) => ({
-          ...prev,
-          [postId]:
-            snap.docs.map(
-              d => ({
-                id: d.id,
-                ...d.data()
-              })
-            )
-        })
-      )
+      setComentarios((prev: any) => ({
+        ...prev,
+        [postId]: snap.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }))
+      }))
     })
   }
 
-  async function enviarComentario(
-    postId: string
-  ) {
+  async function enviarComentario(postId: string) {
     if (!textoComentario.trim()) return
 
     await addDoc(
@@ -1064,10 +897,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
         "comentarios"
       ),
       {
-        texto:
-          filtrarTexto(
-            textoComentario
-          ),
+        texto: filtrarTexto(textoComentario),
         nome: nomeUsuario,
         usuario_id: usuario?.uid,
         criado_em: serverTimestamp()
@@ -1105,36 +935,25 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
     )
 
   const tipoInfo = (t: string) =>
-    TIPOS.find(
-      x => x.valor === t
-    ) || TIPOS[0]
+    TIPOS.find(x => x.valor === t) ||
+    TIPOS[0]
 
   return (
-    <div
-      style={{
-        padding:
-          "16px 16px 160px 16px"
-      }}
-    >
+    <div style={{
+      padding: "16px 16px 160px 16px"
+    }}>
 
       {/* Filtros */}
-      <div
-        style={{
-          display: "flex",
-          gap: "6px",
-          marginBottom: "16px",
-          flexWrap: "wrap"
-        }}
-      >
-        {[
-          "recentes",
-          "relevantes"
-        ].map(ord => (
+      <div style={{
+        display: "flex",
+        gap: "6px",
+        marginBottom: "16px",
+        flexWrap: "wrap"
+      }}>
+        {["recentes", "relevantes"].map(ord => (
           <button
             key={ord}
-            onClick={() =>
-              setOrdenacao(ord)
-            }
+            onClick={() => setOrdenacao(ord)}
             style={{
               padding: "6px 12px",
               borderRadius: "20px",
@@ -1175,9 +994,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
         ].map(t => (
           <button
             key={t.valor}
-            onClick={() =>
-              setFiltroTipo(t.valor)
-            }
+            onClick={() => setFiltroTipo(t.valor)}
             style={{
               padding: "6px 12px",
               borderRadius: "20px",
@@ -1208,29 +1025,24 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
       </div>
 
       {/* Posts */}
-      {postsFiltrados.map(post => {
-        const info =
-          tipoInfo(post.tipo)
+      {postsFiltrados.map((post) => {
+        const info = tipoInfo(post.tipo)
 
         const jaGostou =
           usuario &&
-          (
-            post.curtidas_por || []
-          ).includes(usuario.uid)
+          (post.curtidas_por || [])
+            .includes(usuario.uid)
 
         const jaConfirmou =
           usuario &&
-          (
-            post.confirmacoes_por ||
-            []
-          ).includes(usuario.uid)
+          (post.confirmacoes_por || [])
+            .includes(usuario.uid)
 
         return (
           <div
             key={post.id}
             style={{
-              backgroundColor:
-                cores.branco,
+              backgroundColor: cores.branco,
               borderRadius: "16px",
               padding: "16px",
               marginBottom: "12px",
@@ -1240,113 +1052,83 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 `4px solid ${info.cor}`
             }}
           >
-            <div
-              style={{
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "10px"
+            }}>
+              <div style={{
                 display: "flex",
-                justifyContent:
-                  "space-between",
-                marginBottom: "10px"
-              }}
-            >
-              <div
-                style={{
+                alignItems: "center",
+                gap: "10px"
+              }}>
+                <div style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "50%",
+                  backgroundColor:
+                    post.anonimo
+                      ? "#e5e7eb"
+                      : cores.fundo,
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px"
-                }}
-              >
-                <div
-                  style={{
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
-                    backgroundColor:
-                      post.anonimo
-                        ? "#e5e7eb"
-                        : cores.fundo,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent:
-                      "center"
-                  }}
-                >
+                  justifyContent: "center"
+                }}>
                   {post.anonimo
-                    ? (
-                      <Lock
+                    ? <Lock
                         size={16}
-                        color={
-                          cores.lavanda
-                        }
+                        color={cores.lavanda}
                       />
-                    )
-                    : (
-                      <User
+                    : <User
                         size={16}
-                        color={
-                          cores.roxo
-                        }
+                        color={cores.roxo}
                       />
-                    )}
+                  }
                 </div>
 
                 <div>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontWeight: "600",
-                      fontSize: "14px",
-                      color:
-                        cores.roxoEscuro
-                    }}
-                  >
+                  <p style={{
+                    margin: 0,
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    color: cores.roxoEscuro
+                  }}>
                     {post.nome}
                   </p>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems:
-                        "center",
-                      gap: "6px"
-                    }}
-                  >
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}>
                     {post.localizacao && (
                       <>
                         <MapPin
                           size={11}
-                          color={
-                            cores.lavanda
-                          }
+                          color={cores.lavanda}
                         />
 
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: "11px",
-                            color:
-                              cores.lavanda
-                          }}
-                        >
+                        <p style={{
+                          margin: 0,
+                          fontSize: "11px",
+                          color: cores.lavanda
+                        }}>
                           {post.localizacao}
                         </p>
 
-                        <span
-                          style={{
-                            color: "#ddd"
-                          }}
-                        >
+                        <span style={{
+                          color: "#ddd"
+                        }}>
                           •
                         </span>
                       </>
                     )}
 
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: "11px",
-                        color: "#bbb"
-                      }}
-                    >
+                    <p style={{
+                      margin: 0,
+                      fontSize: "11px",
+                      color: "#bbb"
+                    }}>
                       {formatarData(
                         post.criado_em
                       )}
@@ -1355,45 +1137,36 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 </div>
               </div>
 
-              <span
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: "20px",
-                  fontSize: "11px",
-                  fontWeight: "600",
-                  backgroundColor:
-                    info.fundo,
-                  color: info.cor,
-                  alignSelf:
-                    "flex-start"
-                }}
-              >
+              <span style={{
+                padding: "4px 10px",
+                borderRadius: "20px",
+                fontSize: "11px",
+                fontWeight: "600",
+                backgroundColor: info.fundo,
+                color: info.cor,
+                alignSelf: "flex-start"
+              }}>
                 {info.label}
               </span>
             </div>
 
-            <p
-              style={{
-                margin: "0 0 10px",
-                fontSize: "14px",
-                lineHeight: "1.6",
-                color: cores.texto
-              }}
-            >
+            <p style={{
+              margin: "0 0 10px",
+              fontSize: "14px",
+              lineHeight: "1.6",
+              color: cores.texto
+            }}>
               {post.texto}
             </p>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                paddingTop: "10px",
-                borderTop:
-                  `1px solid ${cores.fundo}`,
-                alignItems:
-                  "center"
-              }}
-            >
+            <div style={{
+              display: "flex",
+              gap: "12px",
+              paddingTop: "10px",
+              borderTop:
+                `1px solid ${cores.fundo}`,
+              alignItems: "center"
+            }}>
               <button
                 onClick={() =>
                   confirmar(
@@ -1403,8 +1176,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 }
                 style={{
                   display: "flex",
-                  alignItems:
-                    "center",
+                  alignItems: "center",
                   gap: "5px",
                   background: "none",
                   border: "none",
@@ -1426,39 +1198,31 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                   }
                 />
 
-                {post.confirmacoes ||
-                  0}
+                {post.confirmacoes || 0}
               </button>
 
               <button
                 onClick={() =>
-                  carregarComentarios(
-                    post.id
-                  )
+                  carregarComentarios(post.id)
                 }
                 style={{
                   display: "flex",
-                  alignItems:
-                    "center",
+                  alignItems: "center",
                   gap: "5px",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
                   color:
-                    postComentando ===
-                    post.id
+                    postComentando === post.id
                       ? cores.roxo
                       : cores.lavanda,
                   fontSize: "12px",
                   padding: 0
                 }}
               >
-                <MessageSquare
-                  size={14}
-                />
+                <MessageSquare size={14} />
 
-                {post.comentarios ||
-                  0}
+                {post.comentarios || 0}
               </button>
 
               <button
@@ -1467,8 +1231,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 }
                 style={{
                   display: "flex",
-                  alignItems:
-                    "center",
+                  alignItems: "center",
                   gap: "5px",
                   background: "none",
                   border: "none",
@@ -1483,88 +1246,64 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
               </button>
             </div>
 
-            {postComentando ===
-              post.id && (
-              <div
-                style={{
-                  marginTop: "12px",
-                  paddingTop: "12px",
-                  borderTop:
-                    `1px solid ${cores.fundo}`
-                }}
-              >
-                {(
-                  comentarios[
-                    post.id
-                  ] || []
-                ).map((c: any) => (
-                  <div
-                    key={c.id}
-                    style={{
-                      backgroundColor:
-                        cores.fundo,
-                      borderRadius: "10px",
-                      padding:
-                        "8px 12px",
-                      marginBottom:
-                        "8px"
-                    }}
-                  >
-                    <p
+            {postComentando === post.id && (
+              <div style={{
+                marginTop: "12px",
+                paddingTop: "12px",
+                borderTop:
+                  `1px solid ${cores.fundo}`
+              }}>
+                {(comentarios[post.id] || [])
+                  .map((c: any) => (
+                    <div
+                      key={c.id}
                       style={{
-                        margin:
-                          "0 0 2px",
-                        fontWeight:
-                          "600",
-                        fontSize: "12px",
-                        color:
-                          cores.roxoEscuro
+                        backgroundColor:
+                          cores.fundo,
+                        borderRadius: "10px",
+                        padding: "8px 12px",
+                        marginBottom: "8px"
                       }}
                     >
-                      {c.nome}
-                    </p>
+                      <p style={{
+                        margin: "0 0 2px",
+                        fontWeight: "600",
+                        fontSize: "12px",
+                        color: cores.roxoEscuro
+                      }}>
+                        {c.nome}
+                      </p>
 
-                    <p
-                      style={{
+                      <p style={{
                         margin: 0,
                         fontSize: "13px",
-                        color:
-                          cores.texto
-                      }}
-                    >
-                      {c.texto}
-                    </p>
-                  </div>
-                ))}
+                        color: cores.texto
+                      }}>
+                        {c.texto}
+                      </p>
+                    </div>
+                  ))}
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px"
-                  }}
-                >
+                <div style={{
+                  display: "flex",
+                  gap: "8px"
+                }}>
                   <input
                     placeholder="Comentar..."
-                    value={
-                      textoComentario
-                    }
-                    onChange={e =>
+                    value={textoComentario}
+                    onChange={(e) =>
                       setTextoComentario(
                         e.target.value
                       )
                     }
-                    onKeyDown={e =>
+                    onKeyDown={(e) =>
                       e.key === "Enter" &&
-                      enviarComentario(
-                        post.id
-                      )
+                      enviarComentario(post.id)
                     }
                     style={{
                       flex: 1,
-                      padding:
-                        "8px 12px",
-                      borderRadius:
-                        "10px",
+                      padding: "8px 12px",
+                      borderRadius: "10px",
                       border:
                         "1.5px solid #E8E0F5",
                       outline: "none",
@@ -1574,20 +1313,14 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
 
                   <button
                     onClick={() =>
-                      enviarComentario(
-                        post.id
-                      )
+                      enviarComentario(post.id)
                     }
                     style={{
-                      padding:
-                        "8px 14px",
-                      backgroundColor:
-                        cores.roxo,
-                      color:
-                        cores.branco,
+                      padding: "8px 14px",
+                      backgroundColor: cores.roxo,
+                      color: cores.branco,
                       border: "none",
-                      borderRadius:
-                        "10px",
+                      borderRadius: "10px",
                       cursor: "pointer",
                       fontSize: "13px",
                       fontWeight: "600"
@@ -1602,33 +1335,25 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
         )
       })}
 
-      {postsFiltrados.length ===
-        0 && (
-        <div
-          style={{
-            backgroundColor:
-              cores.branco,
-            borderRadius: "16px",
-            padding: "32px",
-            textAlign: "center",
-            boxShadow:
-              "0 1px 6px rgba(90,73,151,0.07)"
-          }}
-        >
+      {postsFiltrados.length === 0 && (
+        <div style={{
+          backgroundColor: cores.branco,
+          borderRadius: "16px",
+          padding: "32px",
+          textAlign: "center",
+          boxShadow:
+            "0 1px 6px rgba(90,73,151,0.07)"
+        }}>
           <MessageSquare
             size={40}
             color={cores.roxoClaro}
-            style={{
-              marginBottom: "12px"
-            }}
+            style={{ marginBottom: "12px" }}
           />
 
-          <p
-            style={{
-              color: cores.lavanda,
-              margin: 0
-            }}
-          >
+          <p style={{
+            color: cores.lavanda,
+            margin: 0
+          }}>
             Nenhum post encontrado.
           </p>
         </div>
@@ -1636,57 +1361,41 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
 
       {/* Modal nova publicação */}
       {modalAberto && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor:
-              "rgba(0,0,0,0.3)",
-            zIndex: 200,
-            display: "flex",
-            alignItems:
-              "flex-end"
-          }}
-        >
-          <div
-            style={{
-              backgroundColor:
-                cores.branco,
-              width: "100%",
-              borderRadius:
-                "24px 24px 0 0",
-              padding: "24px",
-              maxHeight: "90vh",
-              overflowY: "auto"
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                alignItems:
-                  "center",
-                marginBottom:
-                  "16px"
-              }}
-            >
-              <h3
-                style={{
-                  color:
-                    cores.roxoEscuro,
-                  margin: 0,
-                  fontSize: "17px"
-                }}
-              >
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor:
+            "rgba(0,0,0,0.3)",
+          zIndex: 200,
+          display: "flex",
+          alignItems: "flex-end"
+        }}>
+          <div style={{
+            backgroundColor: cores.branco,
+            width: "100%",
+            borderRadius:
+              "24px 24px 0 0",
+            padding: "24px",
+            maxHeight: "90vh",
+            overflowY: "auto"
+          }}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px"
+            }}>
+              <h3 style={{
+                color: cores.roxoEscuro,
+                margin: 0,
+                fontSize: "17px"
+              }}>
                 Nova Publicação
               </h3>
 
               <button
                 onClick={() =>
-                  setModalAberto(
-                    false
-                  )
+                  setModalAberto(false)
                 }
                 style={{
                   background: "none",
@@ -1696,20 +1405,16 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
               >
                 <X
                   size={20}
-                  color={
-                    cores.lavanda
-                  }
+                  color={cores.lavanda}
                 />
               </button>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                marginBottom: "16px"
-              }}
-            >
+            <div style={{
+              display: "flex",
+              gap: "8px",
+              marginBottom: "16px"
+            }}>
               {TIPOS.map(t => (
                 <button
                   key={t.valor}
@@ -1718,10 +1423,8 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                   }
                   style={{
                     flex: 1,
-                    padding:
-                      "10px 8px",
-                    borderRadius:
-                      "12px",
+                    padding: "10px 8px",
+                    borderRadius: "12px",
                     fontSize: "12px",
                     border:
                       `2px solid ${
@@ -1752,28 +1455,21 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
             <textarea
               placeholder="Descreva o ocorrido..."
               value={texto}
-              onChange={e =>
-                setTexto(
-                  e.target.value
-                )
+              onChange={(e) =>
+                setTexto(e.target.value)
               }
               autoFocus
               style={{
                 width: "100%",
-                padding:
-                  "14px 16px",
-                borderRadius:
-                  "12px",
+                padding: "14px 16px",
+                borderRadius: "12px",
                 border:
                   "1.5px solid #E8E0F5",
-                marginBottom:
-                  "12px",
+                marginBottom: "12px",
                 resize: "none",
-                fontFamily:
-                  "sans-serif",
+                fontFamily: "sans-serif",
                 fontSize: "14px",
-                boxSizing:
-                  "border-box",
+                boxSizing: "border-box",
                 outline: "none",
                 color: "#333"
               }}
@@ -1783,24 +1479,18 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
             <button
               onClick={obterGPS}
               style={{
-                padding:
-                  "8px 14px",
-                borderRadius:
-                  "10px",
+                padding: "8px 14px",
+                borderRadius: "10px",
                 fontSize: "12px",
                 border:
                   "1.5px solid rgba(90,73,151,0.2)",
-                backgroundColor:
-                  cores.branco,
-                color:
-                  cores.lavanda,
+                backgroundColor: cores.branco,
+                color: cores.lavanda,
                 cursor: "pointer",
                 display: "flex",
-                alignItems:
-                  "center",
+                alignItems: "center",
                 gap: "6px",
-                marginBottom:
-                  "8px"
+                marginBottom: "8px"
               }}
             >
               <MapPin size={14} />
@@ -1814,81 +1504,60 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
             <input
               placeholder="Ou escreva o bairro/local"
               value={localizacao}
-              onChange={e =>
-                setLocalizacao(
-                  e.target.value
-                )
+              onChange={(e) =>
+                setLocalizacao(e.target.value)
               }
               style={{
                 width: "100%",
-                padding:
-                  "10px 14px",
-                borderRadius:
-                  "10px",
+                padding: "10px 14px",
+                borderRadius: "10px",
                 border:
                   "1.5px solid #E8E0F5",
-                marginBottom:
-                  "14px",
+                marginBottom: "14px",
                 fontSize: "13px",
-                boxSizing:
-                  "border-box",
+                boxSizing: "border-box",
                 outline: "none",
                 color: "#333"
               }}
             />
 
-            <label
-              style={{
-                fontSize: "13px",
-                color:
-                  cores.lavanda,
-                display: "flex",
-                alignItems:
-                  "center",
-                gap: "8px",
-                cursor: "pointer",
-                marginBottom:
-                  "16px"
-              }}
-            >
+            <label style={{
+              fontSize: "13px",
+              color: cores.lavanda,
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer",
+              marginBottom: "16px"
+            }}>
               <input
                 type="checkbox"
                 checked={anonimo}
-                onChange={e =>
-                  setAnonimo(
-                    e.target.checked
-                  )
+                onChange={(e) =>
+                  setAnonimo(e.target.checked)
                 }
               />
 
               Publicar anonimamente
             </label>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "8px"
-              }}
-            >
+            <div style={{
+              display: "flex",
+              gap: "8px"
+            }}>
               <button
                 onClick={() =>
-                  setModalAberto(
-                    false
-                  )
+                  setModalAberto(false)
                 }
                 style={{
                   flex: 1,
                   padding: "12px",
-                  borderRadius:
-                    "12px",
+                  borderRadius: "12px",
                   border:
                     `1px solid ${cores.roxoClaro}`,
-                  backgroundColor:
-                    "transparent",
-                  color:
-                    cores.roxo,
-                  cursor:
-                    "pointer",
+                  backgroundColor: "transparent",
+                  color: cores.roxo,
+                  cursor: "pointer",
                   fontSize: "14px"
                 }}
               >
@@ -1900,18 +1569,13 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 style={{
                   flex: 2,
                   padding: "12px",
-                  borderRadius:
-                    "12px",
+                  borderRadius: "12px",
                   border: "none",
-                  backgroundColor:
-                    cores.roxo,
-                  color:
-                    cores.branco,
-                  cursor:
-                    "pointer",
+                  backgroundColor: cores.roxo,
+                  color: cores.branco,
+                  cursor: "pointer",
                   fontSize: "14px",
-                  fontWeight:
-                    "600"
+                  fontWeight: "600"
                 }}
               >
                 Publicar
@@ -1922,17 +1586,15 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
       )}
 
       {/* Botão nova publicação */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: "80px",
-          left: 0,
-          right: 0,
-          padding: "0 16px",
-          display: "flex",
-          gap: "10px"
-        }}
-      >
+      <div style={{
+        position: "fixed",
+        bottom: "80px",
+        left: 0,
+        right: 0,
+        padding: "0 16px",
+        display: "flex",
+        gap: "10px"
+      }}>
         <button
           onClick={() =>
             setModalAberto(true)
@@ -1940,10 +1602,8 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
           style={{
             flex: 1,
             padding: "16px",
-            backgroundColor:
-              cores.roxo,
-            color:
-              cores.branco,
+            backgroundColor: cores.roxo,
+            color: cores.branco,
             border: "none",
             borderRadius: "14px",
             fontSize: "15px",
@@ -1960,80 +1620,62 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
   )
 }
 
-
-// ─────────────────────────────────────────────
-// ABA PARCEIROS
-// ─────────────────────────────────────────────
-
+// ─── ABA PARCEIROS ───
 function AbaParceiros() {
   const { isDark } = useTema()
   const cores = getCores(isDark)
 
-  // Para adicionar novos parceiros/apoiadores,
-  // basta colocar novos objetos nesta lista.
   const parceiros = [
     {
-      nome: "xGMobile",
       tipo: "Apoiador",
-      imagem: "/xGMobile-H.png",
+      nome: "xGMobile",
+      imagem: "/xGMobile%20_%20H.png",
       descricao:
-        "Centro de Competência EMBRAPII Inatel em Redes 5G e 6G, voltado à pesquisa, desenvolvimento e inovação em tecnologias de redes móveis."
+        "Centro de Competência EMBRAPII Inatel em Redes 5G e 6G, voltado à pesquisa, desenvolvimento e inovação em redes de comunicações móveis, com foco no avanço das tecnologias 5G e na evolução para as futuras redes 6G."
     }
   ]
 
   return (
-    <div
-      style={{
-        padding: "28px 16px 120px",
-        minHeight: "calc(100vh - 180px)"
-      }}
-    >
+    <div style={{
+      padding: "24px 16px 100px",
+      minHeight: "calc(100vh - 180px)"
+    }}>
 
       {/* Título */}
-      <div
-        style={{
-          marginBottom: "24px"
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            fontSize: "22px",
-            fontWeight: "700",
-            color: cores.roxoEscuro
-          }}
-        >
+      <div style={{
+        marginBottom: "22px"
+      }}>
+        <h2 style={{
+          color: cores.roxoEscuro,
+          fontSize: "22px",
+          fontWeight: "700",
+          margin: "0 0 6px"
+        }}>
           Nossos parceiros
         </h2>
 
-        <p
-          style={{
-            margin:
-              "6px 0 0",
-            fontSize: "14px",
-            lineHeight: "1.5",
-            color: cores.lavanda
-          }}
-        >
-          Empresas e instituições que fazem parte da nossa rede.
+        <p style={{
+          color: cores.lavanda,
+          fontSize: "14px",
+          margin: 0,
+          lineHeight: "1.5"
+        }}>
+          Empresas e instituições que apoiam o desenvolvimento do Artemis Reach.
         </p>
       </div>
 
-      {/* Cards dos parceiros */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "18px"
-        }}
-      >
+      {/* Cards */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns:
+          "repeat(auto-fit, minmax(280px, 1fr))",
+        gap: "18px"
+      }}>
         {parceiros.map((parceiro, index) => (
           <div
-            key={`${parceiro.nome}-${index}`}
+            key={index}
             style={{
-              backgroundColor:
-                cores.branco,
+              backgroundColor: cores.branco,
               borderRadius: "18px",
               overflow: "hidden",
               boxShadow:
@@ -2043,23 +1685,17 @@ function AbaParceiros() {
             }}
           >
 
-            {/* Imagem / Logo */}
-            <div
-              style={{
-                width: "100%",
-                height: "220px",
-                backgroundColor:
-                  cores.branco,
-                display: "flex",
-                alignItems:
-                  "center",
-                justifyContent:
-                  "center",
-                padding: "20px",
-                boxSizing:
-                  "border-box"
-              }}
-            >
+            {/* Imagem */}
+            <div style={{
+              width: "100%",
+              height: "220px",
+              backgroundColor: "#f8f6fc",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "24px",
+              boxSizing: "border-box"
+            }}>
               <img
                 src={parceiro.imagem}
                 alt={`Logo ${parceiro.nome}`}
@@ -2069,68 +1705,55 @@ function AbaParceiros() {
                   objectFit: "contain",
                   display: "block"
                 }}
+                onError={(e) => {
+                  console.error(
+                    "Não foi possível carregar a imagem:",
+                    parceiro.imagem
+                  )
+                }}
               />
             </div>
 
             {/* Informações */}
-            <div
-              style={{
-                padding:
-                  "20px"
-              }}
-            >
+            <div style={{
+              padding: "20px"
+            }}>
 
               {/* Tipo */}
-              <span
-                style={{
-                  display:
-                    "inline-block",
-                  padding:
-                    "6px 12px",
-                  borderRadius:
-                    "20px",
-                  backgroundColor:
-                    "rgba(90,73,151,0.1)",
-                  color:
-                    cores.roxo,
-                  fontSize: "12px",
-                  fontWeight:
-                    "700",
-                  marginBottom:
-                    "12px"
-                }}
-              >
+              <span style={{
+                display: "inline-block",
+                padding: "6px 12px",
+                borderRadius: "20px",
+                backgroundColor:
+                  "rgba(90,73,151,0.10)",
+                color: cores.roxo,
+                fontSize: "12px",
+                fontWeight: "700",
+                marginBottom: "12px"
+              }}>
                 {parceiro.tipo}
               </span>
 
               {/* Nome */}
-              <h3
-                style={{
-                  margin:
-                    "0 0 10px",
-                  fontSize: "20px",
-                  fontWeight:
-                    "700",
-                  color:
-                    cores.roxoEscuro
-                }}
-              >
+              <h3 style={{
+                margin: "0 0 10px",
+                fontSize: "19px",
+                fontWeight: "700",
+                color: cores.roxoEscuro
+              }}>
                 {parceiro.nome}
               </h3>
 
               {/* Descrição */}
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "14px",
-                  lineHeight:
-                    "1.6",
-                  color:
-                    cores.lavanda
-                }}
-              >
+              <p style={{
+                margin: 0,
+                fontSize: "14px",
+                lineHeight: "1.65",
+                color: cores.lavanda
+              }}>
                 {parceiro.descricao}
               </p>
+
             </div>
           </div>
         ))}
@@ -2139,17 +1762,11 @@ function AbaParceiros() {
   )
 }
 
-
-// ─────────────────────────────────────────────
-// PÁGINA PRINCIPAL
-// ─────────────────────────────────────────────
-
+// ─── PÁGINA PRINCIPAL ───
 export default function Comunidade() {
   const { isDark } = useTema()
   const cores = getCores(isDark)
-
-  const pathname =
-    usePathname()
+  const pathname = usePathname()
 
   const [usuario, setUsuario] =
     useState<any>(null)
@@ -2161,35 +1778,27 @@ export default function Comunidade() {
     useState("comunidade")
 
   useEffect(() => {
-    const unsub =
-      onAuthStateChanged(
-        auth,
-        async (user) => {
-          if (user) {
-            setUsuario(user)
+    const unsub = onAuthStateChanged(
+      auth,
+      async (user) => {
+        if (user) {
+          setUsuario(user)
 
-            try {
-              const snap =
-                await getDoc(
-                  doc(
-                    db,
-                    "usuarios",
-                    user.uid
-                  )
-                )
+          try {
+            const snap = await getDoc(
+              doc(db, "usuarios", user.uid)
+            )
 
-              if (snap.exists()) {
-                setNomeUsuario(
-                  snap.data()
-                    .nome
-                    ?.split(" ")[0] ||
-                  "Usuária"
-                )
-              }
-            } catch {}
-          }
+            if (snap.exists()) {
+              setNomeUsuario(
+                snap.data().nome?.split(" ")[0] ||
+                "Usuária"
+              )
+            }
+          } catch {}
         }
-      )
+      }
+    )
 
     return () => unsub()
   }, [])
@@ -2210,41 +1819,30 @@ export default function Comunidade() {
   ]
 
   return (
-    <div
-      style={{
-        fontFamily: "sans-serif",
-        backgroundColor:
-          cores.fundo,
-        minHeight:
-          "100vh"
-      }}
-    >
+    <div style={{
+      fontFamily: "sans-serif",
+      backgroundColor: cores.fundo,
+      minHeight: "100vh"
+    }}>
+
       <Header />
 
       {/* Tabs superiores */}
-      <div
-        style={{
-          backgroundColor:
-            cores.branco,
-          borderBottom:
-            `1px solid ${cores.fundo}`,
-          padding:
-            "0 16px",
-          display: "flex",
-          gap: 0,
-          overflowX:
-            "auto"
-        }}
-      >
+      <div style={{
+        backgroundColor: cores.branco,
+        borderBottom:
+          `1px solid ${cores.fundo}`,
+        padding: "0 16px",
+        display: "flex",
+        gap: "0",
+        overflowX: "auto"
+      }}>
         {abas.map(a => (
           <button
             key={a.id}
-            onClick={() =>
-              setAba(a.id)
-            }
+            onClick={() => setAba(a.id)}
             style={{
-              padding:
-                "14px 16px",
+              padding: "14px 16px",
               border: "none",
               borderBottom:
                 `3px solid ${
@@ -2252,24 +1850,19 @@ export default function Comunidade() {
                     ? cores.roxo
                     : "transparent"
                 }`,
-              backgroundColor:
-                "transparent",
+              backgroundColor: "transparent",
               color:
                 aba === a.id
                   ? cores.roxo
                   : cores.lavanda,
-              fontSize:
-                "13px",
+              fontSize: "13px",
               fontWeight:
                 aba === a.id
                   ? "700"
                   : "400",
-              cursor:
-                "pointer",
-              whiteSpace:
-                "nowrap",
-              transition:
-                "all 0.2s"
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              transition: "all 0.2s"
             }}
           >
             {a.label}
@@ -2278,29 +1871,21 @@ export default function Comunidade() {
       </div>
 
       {/* Conteúdo */}
-      <div
-        style={{
-          maxWidth:
-            "640px",
-          margin:
-            "0 auto"
-        }}
-      >
+      <div style={{
+        maxWidth: "640px",
+        margin: "0 auto"
+      }}>
         {aba === "chat" && (
           <AbaChat
             usuario={usuario}
-            nomeUsuario={
-              nomeUsuario
-            }
+            nomeUsuario={nomeUsuario}
           />
         )}
 
         {aba === "comunidade" && (
           <AbaComunidade
             usuario={usuario}
-            nomeUsuario={
-              nomeUsuario
-            }
+            nomeUsuario={nomeUsuario}
           />
         )}
 
@@ -2310,84 +1895,59 @@ export default function Comunidade() {
       </div>
 
       {/* Navegação inferior */}
-      <div
-        style={{
-          position:
-            "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor:
-            cores.branco,
-          borderTop:
-            `1px solid ${cores.fundo}`,
-          display: "flex",
-          justifyContent:
-            "space-around",
-          padding:
-            "10px 0",
-          boxShadow:
-            "0 -2px 12px rgba(90,73,151,0.08)",
-          zIndex: 100
-        }}
-      >
-        {nav.map(item => {
+      <div style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: cores.branco,
+        borderTop:
+          `1px solid ${cores.fundo}`,
+        display: "flex",
+        justifyContent: "space-around",
+        padding: "10px 0",
+        boxShadow:
+          "0 -2px 12px rgba(90,73,151,0.08)",
+        zIndex: 100
+      }}>
+        {nav.map((item) => {
           const ativo =
-            pathname ===
-            item.href
+            pathname === item.href
 
           return (
             <Link
-              key={
-                item.label
-              }
-              href={
-                item.href
-              }
+              key={item.label}
+              href={item.href}
               style={{
-                display:
-                  "flex",
-                flexDirection:
-                  "column",
-                alignItems:
-                  "center",
-                gap:
-                  "4px",
-                textDecoration:
-                  "none",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+                textDecoration: "none",
                 color:
                   ativo
                     ? cores.roxo
                     : "#aaa"
               }}
             >
-              <div
-                style={{
-                  padding:
-                    "6px 16px",
-                  borderRadius:
-                    "12px",
-                  backgroundColor:
-                    ativo
-                      ? `rgba(90,73,151,0.1)`
-                      : "transparent"
-                }}
-              >
-                <item.icon
-                  size={20}
-                />
+              <div style={{
+                padding: "6px 16px",
+                borderRadius: "12px",
+                backgroundColor:
+                  ativo
+                    ? "rgba(90,73,151,0.1)"
+                    : "transparent"
+              }}>
+                <item.icon size={20} />
               </div>
 
-              <span
-                style={{
-                  fontSize:
-                    "10px",
-                  fontWeight:
-                    ativo
-                      ? "600"
-                      : "400"
-                }}
-              >
+              <span style={{
+                fontSize: "10px",
+                fontWeight:
+                  ativo
+                    ? "600"
+                    : "400"
+              }}>
                 {item.label}
               </span>
             </Link>
