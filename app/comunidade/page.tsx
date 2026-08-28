@@ -28,24 +28,9 @@ const nav = [
 ]
 
 const TIPOS = [
-  {
-    valor: "relato",
-    label: "Relato",
-    cor: "#5A4997",
-    fundo: "rgba(90,73,151,0.1)"
-  },
-  {
-    valor: "alerta",
-    label: "Alerta",
-    cor: "#dc2626",
-    fundo: "rgba(220,38,38,0.1)"
-  },
-  {
-    valor: "ajuda",
-    label: "Pedido de Ajuda",
-    cor: "#d97706",
-    fundo: "rgba(217,119,6,0.1)"
-  }
+  { valor: "relato", label: "Relato", cor: "#5A4997", fundo: "rgba(90,73,151,0.1)" },
+  { valor: "alerta", label: "Alerta", cor: "#dc2626", fundo: "rgba(220,38,38,0.1)" },
+  { valor: "ajuda", label: "Pedido de Ajuda", cor: "#d97706", fundo: "rgba(217,119,6,0.1)" }
 ]
 
 const PALAVRAS_PROIBIDAS = [
@@ -60,10 +45,7 @@ function filtrarTexto(texto: string) {
   let resultado = texto
 
   PALAVRAS_PROIBIDAS.forEach(p => {
-    resultado = resultado.replace(
-      new RegExp(p, "gi"),
-      "***"
-    )
+    resultado = resultado.replace(new RegExp(p, "gi"), "***")
   })
 
   return resultado
@@ -115,7 +97,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 
   const bottomRef = useRef<any>(null)
 
-
   // Busca grupos
   useEffect(() => {
     if (!usuario) return
@@ -136,7 +117,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 
     return () => unsub()
   }, [usuario])
-
 
   // Busca contatos individuais
   useEffect(() => {
@@ -165,9 +145,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             )
 
             if (perfil.exists()) {
-              nome =
-                perfil.data()?.nome ||
-                "Contato"
+              nome = perfil.data()?.nome || "Contato"
             }
           } catch {}
 
@@ -184,7 +162,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 
     return () => unsub()
   }, [usuario])
-
 
   // Carrega mensagens do chat ativo
   useEffect(() => {
@@ -260,7 +237,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     return () => unsub()
   }, [chatAtivo])
 
-
   async function enviarMensagem() {
     if (!texto.trim() || !chatAtivo) return
 
@@ -289,8 +265,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
     setTexto("")
   }
 
-
-  // LISTA DE CHATS
+  // Lista de chats
   if (!chatAtivo) {
     return (
       <div style={{ padding: "16px" }}>
@@ -303,7 +278,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             marginBottom: "16px"
           }}
         >
-
           <button
             onClick={() => setSubAba("circulos")}
             style={{
@@ -329,7 +303,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             Seus Círculos
           </button>
 
-
           <button
             onClick={() => setSubAba("contatos")}
             style={{
@@ -354,14 +327,11 @@ function AbaChat({ usuario, nomeUsuario }: any) {
           >
             Seus Contatos
           </button>
-
         </div>
-
 
         {/* CÍRCULOS */}
         {subAba === "circulos" && (
           grupos.length === 0 ? (
-
             <div
               style={{
                 backgroundColor: cores.branco,
@@ -398,9 +368,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                 Crie grupos na aba Círculo.
               </p>
             </div>
-
           ) : (
-
             grupos.map(grupo => (
               <div
                 key={grupo.id}
@@ -426,7 +394,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                     "0 1px 4px rgba(90,73,151,0.06)"
                 }}
               >
-
                 <div
                   style={{
                     width: "46px",
@@ -472,18 +439,14 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                   size={18}
                   color={cores.lavanda}
                 />
-
               </div>
             ))
-
           )
         )}
-
 
         {/* CONTATOS */}
         {subAba === "contatos" && (
           contatos.length === 0 ? (
-
             <div
               style={{
                 backgroundColor: cores.branco,
@@ -520,9 +483,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                 Adicione contatos na aba Círculo.
               </p>
             </div>
-
           ) : (
-
             contatos.map(contato => (
               <div
                 key={contato.id}
@@ -547,14 +508,12 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                     "0 1px 4px rgba(90,73,151,0.06)"
                 }}
               >
-
                 <div
                   style={{
                     width: "46px",
                     height: "46px",
                     borderRadius: "50%",
-                    backgroundColor:
-                      cores.roxoClaro,
+                    backgroundColor: cores.roxoClaro,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -595,19 +554,15 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                   size={18}
                   color={cores.lavanda}
                 />
-
               </div>
             ))
-
           )
         )}
-
       </div>
     )
   }
 
-
-  // CONVERSA ABERTA
+  // Conversa aberta
   return (
     <div
       style={{
@@ -616,7 +571,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
         height: "calc(100vh - 180px)"
       }}
     >
-
       {/* Header do chat */}
       <div
         style={{
@@ -629,7 +583,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
           gap: "10px"
         }}
       >
-
         <button
           onClick={() => setChatAtivo(null)}
           style={{
@@ -653,7 +606,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                 : "50%",
             backgroundColor:
               chatAtivo.tipo === "grupo"
-                ? (chatAtivo.cor || cores.roxo)
+                ? chatAtivo.cor || cores.roxo
                 : cores.roxoClaro,
             display: "flex",
             alignItems: "center",
@@ -693,9 +646,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             </p>
           )}
         </div>
-
       </div>
-
 
       {/* Mensagens */}
       <div
@@ -708,7 +659,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
           gap: "8px"
         }}
       >
-
         {mensagens.length === 0 && (
           <p
             style={{
@@ -738,7 +688,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                     : "flex-start"
               }}
             >
-
               {!minha &&
                 chatAtivo.tipo === "grupo" && (
                   <p
@@ -761,10 +710,9 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                 style={{
                   maxWidth: "75%",
                   padding: "10px 14px",
-                  borderRadius:
-                    minha
-                      ? "18px 18px 4px 18px"
-                      : "18px 18px 18px 4px",
+                  borderRadius: minha
+                    ? "18px 18px 4px 18px"
+                    : "18px 18px 18px 4px",
                   backgroundColor:
                     minha
                       ? cores.roxo
@@ -773,15 +721,13 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                     "0 1px 4px rgba(90,73,151,0.1)"
                 }}
               >
-
                 <p
                   style={{
                     margin: 0,
                     fontSize: "14px",
-                    color:
-                      minha
-                        ? "white"
-                        : cores.roxoEscuro,
+                    color: minha
+                      ? "white"
+                      : cores.roxoEscuro,
                     lineHeight: "1.4"
                   }}
                 >
@@ -792,26 +738,23 @@ function AbaChat({ usuario, nomeUsuario }: any) {
                   style={{
                     margin: "4px 0 0",
                     fontSize: "10px",
-                    color:
-                      minha
-                        ? "rgba(255,255,255,0.7)"
-                        : "#bbb",
+                    color: minha
+                      ? "rgba(255,255,255,0.7)"
+                      : "#bbb",
                     textAlign: "right"
                   }}
                 >
-                  {formatarHora(msg.criado_em)}
+                  {formatarHora(
+                    msg.criado_em
+                  )}
                 </p>
-
               </div>
-
             </div>
           )
         })}
 
         <div ref={bottomRef} />
-
       </div>
-
 
       {/* Input */}
       <div
@@ -825,7 +768,6 @@ function AbaChat({ usuario, nomeUsuario }: any) {
           gap: "8px"
         }}
       >
-
         <input
           placeholder="Digite uma mensagem..."
           value={texto}
@@ -869,9 +811,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             color="white"
           />
         </button>
-
       </div>
-
     </div>
   )
 }
@@ -881,11 +821,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
 // ABA COMUNIDADE
 // ─────────────────────────────────────────────
 
-function AbaComunidade({
-  usuario,
-  nomeUsuario
-}: any) {
-
+function AbaComunidade({ usuario, nomeUsuario }: any) {
   const { isDark } = useTema()
   const cores = getCores(isDark)
 
@@ -893,49 +829,33 @@ function AbaComunidade({
   const [texto, setTexto] = useState("")
   const [tipo, setTipo] = useState("relato")
   const [anonimo, setAnonimo] = useState(false)
-  const [modalAberto, setModalAberto] =
-    useState(false)
-  const [localizacao, setLocalizacao] =
-    useState("")
-  const [carregandoGPS, setCarregandoGPS] =
-    useState(false)
-  const [postComentando, setPostComentando] =
-    useState<any>(null)
-  const [textoComentario, setTextoComentario] =
-    useState("")
-  const [comentarios, setComentarios] =
-    useState<any>({})
-  const [ordenacao, setOrdenacao] =
-    useState("recentes")
-  const [filtroTipo, setFiltroTipo] =
-    useState("todos")
-
+  const [modalAberto, setModalAberto] = useState(false)
+  const [localizacao, setLocalizacao] = useState("")
+  const [carregandoGPS, setCarregandoGPS] = useState(false)
+  const [postComentando, setPostComentando] = useState<any>(null)
+  const [textoComentario, setTextoComentario] = useState("")
+  const [comentarios, setComentarios] = useState<any>({})
+  const [ordenacao, setOrdenacao] = useState("recentes")
+  const [filtroTipo, setFiltroTipo] = useState("todos")
 
   useEffect(() => {
     if (!usuario) return
 
     async function carregarPref() {
-      const {
-        getDoc,
-        doc
-      } = await import(
-        "firebase/firestore"
-      )
+      const { getDoc, doc } =
+        await import("firebase/firestore")
 
       const snap = await getDoc(
         doc(db, "usuarios", usuario.uid)
       )
 
-      if (
-        snap.data()?.privacidade?.anonimo
-      ) {
+      if (snap.data()?.privacidade?.anonimo) {
         setAnonimo(true)
       }
     }
 
     carregarPref()
   }, [usuario])
-
 
   useEffect(() => {
     const q = query(
@@ -965,7 +885,6 @@ function AbaComunidade({
     return () => unsub()
   }, [])
 
-
   async function obterGPS() {
     setCarregandoGPS(true)
 
@@ -985,7 +904,6 @@ function AbaComunidade({
             end.city ||
             "Local atual"
           )
-
         } catch {
           setLocalizacao("Local atual")
         }
@@ -995,7 +913,6 @@ function AbaComunidade({
       () => setCarregandoGPS(false)
     )
   }
-
 
   async function publicar() {
     if (!texto.trim()) return
@@ -1008,14 +925,12 @@ function AbaComunidade({
         anonimo,
         localizacao:
           localizacao || null,
-        nome:
-          anonimo
-            ? "Anônimo"
-            : nomeUsuario,
-        usuario_id:
-          anonimo
-            ? null
-            : usuario?.uid,
+        nome: anonimo
+          ? "Anônimo"
+          : nomeUsuario,
+        usuario_id: anonimo
+          ? null
+          : usuario?.uid,
         curtidas: 0,
         curtidas_por: [],
         confirmacoes: 0,
@@ -1033,12 +948,10 @@ function AbaComunidade({
     setModalAberto(false)
   }
 
-
   async function curtir(
     postId: string,
     jaGostou: boolean
   ) {
-
     if (!usuario) return
 
     const ref = doc(
@@ -1048,30 +961,24 @@ function AbaComunidade({
     )
 
     if (jaGostou) {
-
       await updateDoc(ref, {
         curtidas: increment(-1),
         curtidas_por:
           arrayRemove(usuario.uid)
       })
-
     } else {
-
       await updateDoc(ref, {
         curtidas: increment(1),
         curtidas_por:
           arrayUnion(usuario.uid)
       })
-
     }
   }
-
 
   async function confirmar(
     postId: string,
     jaConfirmou: boolean
   ) {
-
     if (!usuario) return
 
     const ref = doc(
@@ -1081,29 +988,23 @@ function AbaComunidade({
     )
 
     if (jaConfirmou) {
-
       await updateDoc(ref, {
         confirmacoes: increment(-1),
         confirmacoes_por:
           arrayRemove(usuario.uid)
       })
-
     } else {
-
       await updateDoc(ref, {
         confirmacoes: increment(1),
         confirmacoes_por:
           arrayUnion(usuario.uid)
       })
-
     }
   }
-
 
   async function denunciar(
     postId: string
   ) {
-
     await updateDoc(
       doc(db, "posts", postId),
       {
@@ -1114,11 +1015,9 @@ function AbaComunidade({
     alert("Post denunciado.")
   }
 
-
   async function carregarComentarios(
     postId: string
   ) {
-
     if (postComentando === postId) {
       setPostComentando(null)
       return
@@ -1152,11 +1051,9 @@ function AbaComunidade({
     })
   }
 
-
   async function enviarComentario(
     postId: string
   ) {
-
     if (!textoComentario.trim()) return
 
     await addDoc(
@@ -1172,52 +1069,45 @@ function AbaComunidade({
             textoComentario
           ),
         nome: nomeUsuario,
-        usuario_id:
-          usuario?.uid,
-        criado_em:
-          serverTimestamp()
+        usuario_id: usuario?.uid,
+        criado_em: serverTimestamp()
       }
     )
 
     await updateDoc(
       doc(db, "posts", postId),
       {
-        comentarios:
-          increment(1)
+        comentarios: increment(1)
       }
     )
 
     setTextoComentario("")
   }
 
-
-  const postsFiltrados =
-    posts
-      .filter(
-        p =>
-          filtroTipo === "todos" ||
-          p.tipo === filtroTipo
-      )
-      .sort(
-        (a, b) =>
-          ordenacao === "relevantes"
-            ? (
-                (b.confirmacoes || 0) +
-                (b.curtidas || 0)
-              ) -
-              (
-                (a.confirmacoes || 0) +
-                (a.curtidas || 0)
-              )
-            : 0
-      )
-
+  const postsFiltrados = posts
+    .filter(
+      p =>
+        filtroTipo === "todos" ||
+        p.tipo === filtroTipo
+    )
+    .sort(
+      (a, b) =>
+        ordenacao === "relevantes"
+          ? (
+              (b.confirmacoes || 0) +
+              (b.curtidas || 0)
+            ) -
+            (
+              (a.confirmacoes || 0) +
+              (a.curtidas || 0)
+            )
+          : 0
+    )
 
   const tipoInfo = (t: string) =>
     TIPOS.find(
       x => x.valor === t
     ) || TIPOS[0]
-
 
   return (
     <div
@@ -1236,12 +1126,10 @@ function AbaComunidade({
           flexWrap: "wrap"
         }}
       >
-
         {[
           "recentes",
           "relevantes"
         ].map(ord => (
-
           <button
             key={ord}
             onClick={() =>
@@ -1276,9 +1164,7 @@ function AbaComunidade({
               ? "Mais recentes"
               : "Mais relevantes"}
           </button>
-
         ))}
-
 
         {[
           {
@@ -1287,7 +1173,6 @@ function AbaComunidade({
           },
           ...TIPOS
         ].map(t => (
-
           <button
             key={t.valor}
             onClick={() =>
@@ -1319,15 +1204,11 @@ function AbaComunidade({
           >
             {t.label}
           </button>
-
         ))}
-
       </div>
-
 
       {/* Posts */}
       {postsFiltrados.map(post => {
-
         const info =
           tipoInfo(post.tipo)
 
@@ -1335,20 +1216,16 @@ function AbaComunidade({
           usuario &&
           (
             post.curtidas_por || []
-          ).includes(
-            usuario.uid
-          )
+          ).includes(usuario.uid)
 
         const jaConfirmou =
           usuario &&
           (
-            post.confirmacoes_por || []
-          ).includes(
-            usuario.uid
-          )
+            post.confirmacoes_por ||
+            []
+          ).includes(usuario.uid)
 
         return (
-
           <div
             key={post.id}
             style={{
@@ -1363,7 +1240,6 @@ function AbaComunidade({
                 `4px solid ${info.cor}`
             }}
           >
-
             <div
               style={{
                 display: "flex",
@@ -1372,7 +1248,6 @@ function AbaComunidade({
                 marginBottom: "10px"
               }}
             >
-
               <div
                 style={{
                   display: "flex",
@@ -1380,7 +1255,6 @@ function AbaComunidade({
                   gap: "10px"
                 }}
               >
-
                 <div
                   style={{
                     width: "38px",
@@ -1400,20 +1274,22 @@ function AbaComunidade({
                     ? (
                       <Lock
                         size={16}
-                        color={cores.lavanda}
+                        color={
+                          cores.lavanda
+                        }
                       />
                     )
                     : (
                       <User
                         size={16}
-                        color={cores.roxo}
+                        color={
+                          cores.roxo
+                        }
                       />
                     )}
                 </div>
 
-
                 <div>
-
                   <p
                     style={{
                       margin: 0,
@@ -1429,11 +1305,11 @@ function AbaComunidade({
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "center",
+                      alignItems:
+                        "center",
                       gap: "6px"
                     }}
                   >
-
                     {post.localizacao && (
                       <>
                         <MapPin
@@ -1475,13 +1351,9 @@ function AbaComunidade({
                         post.criado_em
                       )}
                     </p>
-
                   </div>
-
                 </div>
-
               </div>
-
 
               <span
                 style={{
@@ -1498,9 +1370,7 @@ function AbaComunidade({
               >
                 {info.label}
               </span>
-
             </div>
-
 
             <p
               style={{
@@ -1513,7 +1383,6 @@ function AbaComunidade({
               {post.texto}
             </p>
 
-
             <div
               style={{
                 display: "flex",
@@ -1521,10 +1390,10 @@ function AbaComunidade({
                 paddingTop: "10px",
                 borderTop:
                   `1px solid ${cores.fundo}`,
-                alignItems: "center"
+                alignItems:
+                  "center"
               }}
             >
-
               <button
                 onClick={() =>
                   confirmar(
@@ -1534,7 +1403,8 @@ function AbaComunidade({
                 }
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems:
+                    "center",
                   gap: "5px",
                   background: "none",
                   border: "none",
@@ -1556,9 +1426,9 @@ function AbaComunidade({
                   }
                 />
 
-                {post.confirmacoes || 0}
+                {post.confirmacoes ||
+                  0}
               </button>
-
 
               <button
                 onClick={() =>
@@ -1568,7 +1438,8 @@ function AbaComunidade({
                 }
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems:
+                    "center",
                   gap: "5px",
                   background: "none",
                   border: "none",
@@ -1586,19 +1457,18 @@ function AbaComunidade({
                   size={14}
                 />
 
-                {post.comentarios || 0}
+                {post.comentarios ||
+                  0}
               </button>
-
 
               <button
                 onClick={() =>
-                  denunciar(
-                    post.id
-                  )
+                  denunciar(post.id)
                 }
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems:
+                    "center",
                   gap: "5px",
                   background: "none",
                   border: "none",
@@ -1611,13 +1481,10 @@ function AbaComunidade({
               >
                 <Flag size={14} />
               </button>
-
             </div>
-
 
             {postComentando ===
               post.id && (
-
               <div
                 style={{
                   marginTop: "12px",
@@ -1626,13 +1493,11 @@ function AbaComunidade({
                     `1px solid ${cores.fundo}`
                 }}
               >
-
                 {(
                   comentarios[
                     post.id
                   ] || []
                 ).map((c: any) => (
-
                   <div
                     key={c.id}
                     style={{
@@ -1641,15 +1506,16 @@ function AbaComunidade({
                       borderRadius: "10px",
                       padding:
                         "8px 12px",
-                      marginBottom: "8px"
+                      marginBottom:
+                        "8px"
                     }}
                   >
-
                     <p
                       style={{
                         margin:
                           "0 0 2px",
-                        fontWeight: "600",
+                        fontWeight:
+                          "600",
                         fontSize: "12px",
                         color:
                           cores.roxoEscuro
@@ -1668,11 +1534,8 @@ function AbaComunidade({
                     >
                       {c.texto}
                     </p>
-
                   </div>
-
                 ))}
-
 
                 <div
                   style={{
@@ -1680,7 +1543,6 @@ function AbaComunidade({
                     gap: "8px"
                   }}
                 >
-
                   <input
                     placeholder="Comentar..."
                     value={
@@ -1733,21 +1595,15 @@ function AbaComunidade({
                   >
                     Enviar
                   </button>
-
                 </div>
-
               </div>
-
             )}
-
           </div>
-
         )
       })}
 
-
-      {postsFiltrados.length === 0 && (
-
+      {postsFiltrados.length ===
+        0 && (
         <div
           style={{
             backgroundColor:
@@ -1759,7 +1615,6 @@ function AbaComunidade({
               "0 1px 6px rgba(90,73,151,0.07)"
           }}
         >
-
           <MessageSquare
             size={40}
             color={cores.roxoClaro}
@@ -1776,15 +1631,11 @@ function AbaComunidade({
           >
             Nenhum post encontrado.
           </p>
-
         </div>
-
       )}
-
 
       {/* Modal nova publicação */}
       {modalAberto && (
-
         <div
           style={{
             position: "fixed",
@@ -1793,10 +1644,10 @@ function AbaComunidade({
               "rgba(0,0,0,0.3)",
             zIndex: 200,
             display: "flex",
-            alignItems: "flex-end"
+            alignItems:
+              "flex-end"
           }}
         >
-
           <div
             style={{
               backgroundColor:
@@ -1809,17 +1660,17 @@ function AbaComunidade({
               overflowY: "auto"
             }}
           >
-
             <div
               style={{
                 display: "flex",
                 justifyContent:
                   "space-between",
-                alignItems: "center",
-                marginBottom: "16px"
+                alignItems:
+                  "center",
+                marginBottom:
+                  "16px"
               }}
             >
-
               <h3
                 style={{
                   color:
@@ -1833,7 +1684,9 @@ function AbaComunidade({
 
               <button
                 onClick={() =>
-                  setModalAberto(false)
+                  setModalAberto(
+                    false
+                  )
                 }
                 style={{
                   background: "none",
@@ -1843,12 +1696,12 @@ function AbaComunidade({
               >
                 <X
                   size={20}
-                  color={cores.lavanda}
+                  color={
+                    cores.lavanda
+                  }
                 />
               </button>
-
             </div>
-
 
             <div
               style={{
@@ -1857,9 +1710,7 @@ function AbaComunidade({
                 marginBottom: "16px"
               }}
             >
-
               {TIPOS.map(t => (
-
                 <button
                   key={t.valor}
                   onClick={() =>
@@ -1895,11 +1746,8 @@ function AbaComunidade({
                 >
                   {t.label}
                 </button>
-
               ))}
-
             </div>
-
 
             <textarea
               placeholder="Descreva o ocorrido..."
@@ -1932,7 +1780,6 @@ function AbaComunidade({
               rows={4}
             />
 
-
             <button
               onClick={obterGPS}
               style={{
@@ -1964,7 +1811,6 @@ function AbaComunidade({
                   "Usar localização atual (bairro)"}
             </button>
 
-
             <input
               placeholder="Ou escreva o bairro/local"
               value={localizacao}
@@ -1991,11 +1837,11 @@ function AbaComunidade({
               }}
             />
 
-
             <label
               style={{
                 fontSize: "13px",
-                color: cores.lavanda,
+                color:
+                  cores.lavanda,
                 display: "flex",
                 alignItems:
                   "center",
@@ -2005,7 +1851,6 @@ function AbaComunidade({
                   "16px"
               }}
             >
-
               <input
                 type="checkbox"
                 checked={anonimo}
@@ -2017,9 +1862,7 @@ function AbaComunidade({
               />
 
               Publicar anonimamente
-
             </label>
-
 
             <div
               style={{
@@ -2027,10 +1870,11 @@ function AbaComunidade({
                 gap: "8px"
               }}
             >
-
               <button
                 onClick={() =>
-                  setModalAberto(false)
+                  setModalAberto(
+                    false
+                  )
                 }
                 style={{
                   flex: 1,
@@ -2043,7 +1887,8 @@ function AbaComunidade({
                     "transparent",
                   color:
                     cores.roxo,
-                  cursor: "pointer",
+                  cursor:
+                    "pointer",
                   fontSize: "14px"
                 }}
               >
@@ -2062,22 +1907,19 @@ function AbaComunidade({
                     cores.roxo,
                   color:
                     cores.branco,
-                  cursor: "pointer",
+                  cursor:
+                    "pointer",
                   fontSize: "14px",
-                  fontWeight: "600"
+                  fontWeight:
+                    "600"
                 }}
               >
                 Publicar
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       )}
-
 
       {/* Botão nova publicação */}
       <div
@@ -2091,7 +1933,6 @@ function AbaComunidade({
           gap: "10px"
         }}
       >
-
         <button
           onClick={() =>
             setModalAberto(true)
@@ -2114,9 +1955,7 @@ function AbaComunidade({
         >
           + Nova Publicação
         </button>
-
       </div>
-
     </div>
   )
 }
@@ -2127,35 +1966,26 @@ function AbaComunidade({
 // ─────────────────────────────────────────────
 
 function AbaParceiros() {
-
   const { isDark } = useTema()
   const cores = getCores(isDark)
 
-  // Adicione novos parceiros/apoiadores aqui
+  // Para adicionar novos parceiros/apoiadores,
+  // basta colocar novos objetos nesta lista.
   const parceiros = [
     {
-      tipo: "Apoiador",
       nome: "xGMobile",
-      imagem: "/xGMobile _ H.png",
+      tipo: "Apoiador",
+      imagem: "/xGMobile-H.png",
       descricao:
-        "O xGMobile é um centro voltado à pesquisa, desenvolvimento e inovação em redes de comunicações móveis."
-    },
-
-    // EXEMPLO PARA ADICIONAR OUTRO:
-    //
-    // {
-    //   tipo: "Parceiro",
-    //   nome: "Nome da empresa",
-    //   imagem: "/nome-da-imagem.png",
-    //   descricao: "Descrição da empresa."
-    // }
+        "Centro de Competência EMBRAPII Inatel em Redes 5G e 6G, voltado à pesquisa, desenvolvimento e inovação em tecnologias de redes móveis."
+    }
   ]
 
   return (
     <div
       style={{
         padding: "28px 16px 120px",
-        minHeight: "calc(100vh - 200px)"
+        minHeight: "calc(100vh - 180px)"
       }}
     >
 
@@ -2165,13 +1995,12 @@ function AbaParceiros() {
           marginBottom: "24px"
         }}
       >
-
         <h2
           style={{
-            color: cores.roxoEscuro,
+            margin: 0,
             fontSize: "22px",
             fontWeight: "700",
-            margin: "0 0 6px"
+            color: cores.roxoEscuro
           }}
         >
           Nossos parceiros
@@ -2179,135 +2008,133 @@ function AbaParceiros() {
 
         <p
           style={{
-            color: cores.lavanda,
+            margin:
+              "6px 0 0",
             fontSize: "14px",
-            margin: 0,
-            lineHeight: "1.5"
+            lineHeight: "1.5",
+            color: cores.lavanda
           }}
         >
-          Empresas e instituições que apoiam o desenvolvimento do Artemis Reach.
+          Empresas e instituições que fazem parte da nossa rede.
         </p>
-
       </div>
-
 
       {/* Cards dos parceiros */}
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(280px, 1fr))",
           gap: "18px"
         }}
       >
-
         {parceiros.map((parceiro, index) => (
-
           <div
-            key={index}
+            key={`${parceiro.nome}-${index}`}
             style={{
               backgroundColor:
                 cores.branco,
-              borderRadius: "20px",
+              borderRadius: "18px",
               overflow: "hidden",
               boxShadow:
-                "0 3px 14px rgba(90,73,151,0.10)"
+                "0 3px 14px rgba(90,73,151,0.10)",
+              border:
+                "1px solid rgba(90,73,151,0.06)"
             }}
           >
 
-            {/* Imagem */}
+            {/* Imagem / Logo */}
             <div
               style={{
                 width: "100%",
                 height: "220px",
                 backgroundColor:
-                  isDark
-                    ? "#29233A"
-                    : "#F8F5FC",
+                  cores.branco,
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "24px",
-                boxSizing: "border-box"
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
+                padding: "20px",
+                boxSizing:
+                  "border-box"
               }}
             >
-
               <img
                 src={parceiro.imagem}
                 alt={`Logo ${parceiro.nome}`}
                 style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  width: "auto",
-                  height: "auto",
-                  objectFit: "contain"
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block"
                 }}
               />
-
             </div>
-
 
             {/* Informações */}
             <div
               style={{
-                padding: "20px"
+                padding:
+                  "20px"
               }}
             >
 
               {/* Tipo */}
               <span
                 style={{
-                  display: "inline-block",
-                  padding: "6px 12px",
-                  borderRadius: "20px",
+                  display:
+                    "inline-block",
+                  padding:
+                    "6px 12px",
+                  borderRadius:
+                    "20px",
                   backgroundColor:
-                    "rgba(90,73,151,0.10)",
+                    "rgba(90,73,151,0.1)",
                   color:
                     cores.roxo,
                   fontSize: "12px",
-                  fontWeight: "700",
-                  marginBottom: "12px"
+                  fontWeight:
+                    "700",
+                  marginBottom:
+                    "12px"
                 }}
               >
                 {parceiro.tipo}
               </span>
 
-
               {/* Nome */}
               <h3
                 style={{
-                  color:
-                    cores.roxoEscuro,
-                  fontSize: "20px",
-                  fontWeight: "700",
                   margin:
-                    "0 0 10px"
+                    "0 0 10px",
+                  fontSize: "20px",
+                  fontWeight:
+                    "700",
+                  color:
+                    cores.roxoEscuro
                 }}
               >
                 {parceiro.nome}
               </h3>
 
-
               {/* Descrição */}
               <p
                 style={{
-                  color:
-                    cores.lavanda,
+                  margin: 0,
                   fontSize: "14px",
-                  lineHeight: "1.6",
-                  margin: 0
+                  lineHeight:
+                    "1.6",
+                  color:
+                    cores.lavanda
                 }}
               >
                 {parceiro.descricao}
               </p>
-
             </div>
-
           </div>
-
         ))}
-
       </div>
-
     </div>
   )
 }
@@ -2318,7 +2145,6 @@ function AbaParceiros() {
 // ─────────────────────────────────────────────
 
 export default function Comunidade() {
-
   const { isDark } = useTema()
   const cores = getCores(isDark)
 
@@ -2334,20 +2160,15 @@ export default function Comunidade() {
   const [aba, setAba] =
     useState("comunidade")
 
-
   useEffect(() => {
-
     const unsub =
       onAuthStateChanged(
         auth,
         async (user) => {
-
           if (user) {
-
             setUsuario(user)
 
             try {
-
               const snap =
                 await getDoc(
                   doc(
@@ -2358,27 +2179,20 @@ export default function Comunidade() {
                 )
 
               if (snap.exists()) {
-
                 setNomeUsuario(
                   snap.data()
                     .nome
                     ?.split(" ")[0] ||
                   "Usuária"
                 )
-
               }
-
             } catch {}
-
           }
-
         }
       )
 
     return () => unsub()
-
   }, [])
-
 
   const abas = [
     {
@@ -2395,36 +2209,34 @@ export default function Comunidade() {
     }
   ]
 
-
   return (
     <div
       style={{
         fontFamily: "sans-serif",
         backgroundColor:
           cores.fundo,
-        minHeight: "100vh"
+        minHeight:
+          "100vh"
       }}
     >
-
       <Header />
 
-
-      {/* Tabs */}
+      {/* Tabs superiores */}
       <div
         style={{
           backgroundColor:
             cores.branco,
           borderBottom:
             `1px solid ${cores.fundo}`,
-          padding: "0 16px",
+          padding:
+            "0 16px",
           display: "flex",
-          gap: "0",
-          overflowX: "auto"
+          gap: 0,
+          overflowX:
+            "auto"
         }}
       >
-
         {abas.map(a => (
-
           <button
             key={a.id}
             onClick={() =>
@@ -2446,12 +2258,14 @@ export default function Comunidade() {
                 aba === a.id
                   ? cores.roxo
                   : cores.lavanda,
-              fontSize: "13px",
+              fontSize:
+                "13px",
               fontWeight:
                 aba === a.id
                   ? "700"
                   : "400",
-              cursor: "pointer",
+              cursor:
+                "pointer",
               whiteSpace:
                 "nowrap",
               transition:
@@ -2460,20 +2274,18 @@ export default function Comunidade() {
           >
             {a.label}
           </button>
-
         ))}
-
       </div>
-
 
       {/* Conteúdo */}
       <div
         style={{
-          maxWidth: "640px",
-          margin: "0 auto"
+          maxWidth:
+            "640px",
+          margin:
+            "0 auto"
         }}
       >
-
         {aba === "chat" && (
           <AbaChat
             usuario={usuario}
@@ -2495,14 +2307,13 @@ export default function Comunidade() {
         {aba === "parceiros" && (
           <AbaParceiros />
         )}
-
       </div>
-
 
       {/* Navegação inferior */}
       <div
         style={{
-          position: "fixed",
+          position:
+            "fixed",
           bottom: 0,
           left: 0,
           right: 0,
@@ -2513,30 +2324,35 @@ export default function Comunidade() {
           display: "flex",
           justifyContent:
             "space-around",
-          padding: "10px 0",
+          padding:
+            "10px 0",
           boxShadow:
-            "0 -2px 12px rgba(90,73,151,0.08)"
+            "0 -2px 12px rgba(90,73,151,0.08)",
+          zIndex: 100
         }}
       >
-
         {nav.map(item => {
-
           const ativo =
             pathname ===
             item.href
 
           return (
-
             <Link
-              key={item.label}
-              href={item.href}
+              key={
+                item.label
+              }
+              href={
+                item.href
+              }
               style={{
-                display: "flex",
+                display:
+                  "flex",
                 flexDirection:
                   "column",
                 alignItems:
                   "center",
-                gap: "4px",
+                gap:
+                  "4px",
                 textDecoration:
                   "none",
                 color:
@@ -2545,7 +2361,6 @@ export default function Comunidade() {
                     : "#aaa"
               }}
             >
-
               <div
                 style={{
                   padding:
@@ -2554,7 +2369,7 @@ export default function Comunidade() {
                     "12px",
                   backgroundColor:
                     ativo
-                      ? "rgba(90,73,151,0.1)"
+                      ? `rgba(90,73,151,0.1)`
                       : "transparent"
                 }}
               >
@@ -2565,7 +2380,8 @@ export default function Comunidade() {
 
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize:
+                    "10px",
                   fontWeight:
                     ativo
                       ? "600"
@@ -2574,14 +2390,10 @@ export default function Comunidade() {
               >
                 {item.label}
               </span>
-
             </Link>
-
           )
         })}
-
       </div>
-
     </div>
   )
 }
