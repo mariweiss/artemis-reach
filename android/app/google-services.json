@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "36088536822",
+    "project_id": "artemis-reach",
+    "storage_bucket": "artemis-reach.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36088536822:android:155731ade715fea730d6d7",
+        "android_client_info": {
+          "package_name": "com.artemis.reach"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "36088536822-i0lp8sok78ngflrin0b74ddse7pb0i0g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCN1AR6lkNxtBNkzchZoZ8Q1LzISi1eZ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "36088536822-i0lp8sok78ngflrin0b74ddse7pb0i0g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

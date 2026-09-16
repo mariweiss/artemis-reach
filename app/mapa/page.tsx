@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, onSnapshot, doc, setDoc, query, where, getDoc } from "firebase/firestore"
-import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X, Route } from "lucide-react"
+import { collection, onSnapshot, doc, query, where, getDoc } from "firebase/firestore"
+import { MapPin, Navigation, AlertCircle, Users, MessageSquare, Home, Bell, Layers, Check, X } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import Header from "../componentes/Header"
 import dynamic from "next/dynamic"
 import { useTema } from "../contexts/ThemeContext"
 import { getCores } from "../cores"
+import { useSOS } from "../hooks/useSOS"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -31,19 +32,51 @@ export default function Mapa() {
   const [status, setStatus] = useState("Obtendo localização...")
   const [usuarioId, setUsuarioId] = useState<string | null>(null)
   const [grupos, setGrupos] = useState<any[]>([])
-  const [gruposSelecionados, setGruposSelecionados] = useState<Set<string>>(new Set())
   const [modalGrupos, setModalGrupos] = useState(false)
   const pathname = usePathname()
   const [centralizar, setCentralizar] = useState(false)
   const [modalSOS, setModalSOS] = useState(false)
   const [contadorSOS, setContadorSOS] = useState<number | null>(null)
   const contadorRef = useRef<any>(null)
-  const [mostrarRota, setMostrarRota] = useState(false)
-  const [pontosRota, setPontosRota] = useState<any[]>([])
   const ultimoSalvoRef = useRef<number>(0)
   const [contatos, setContatos] = useState<any[]>([])
-  const [contatosSelecionados, setContatosSelecionados] = useState<Set<string>>(new Set())
   const [abaModal, setAbaModal] = useState<"grupos" | "contatos">("grupos")
+  const [gruposSelecionados, setGruposSelecionados] = useState<Set<string>>(() => {
+    try {
+      const salvo = localStorage.getItem("mapa-grupos-selecionados")
+      return salvo ? new Set(JSON.parse(salvo)) : new Set()
+    } catch { return new Set() }
+  })
+  const [contatosSelecionados, setContatosSelecionados] = useState<Set<string>>(() => {
+    try {
+      const salvo = localStorage.getItem("mapa-contatos-selecionados")
+      return salvo ? new Set(JSON.parse(salvo)) : new Set()
+    } catch { return new Set() }
+  })
+  const { sosAtivo, acionarSOS, cancelarSOS: cancelarSOSFirebase } = useSOS()
+  const [nomeUsuario, setNomeUsuario] = useState("Usuária")
+
+  useEffect(() => {
+    if (!usuarioId) return
+    const idUsuario = usuarioId
+    async function buscarNome() {
+      const perfil = await getDoc(doc(db, "usuarios", idUsuario))
+      if (perfil.exists()) setNomeUsuario(perfil.data()?.nome?.split(" ")[0] || "Usuária")
+    }
+    buscarNome()
+  }, [usuarioId])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("mapa-grupos-selecionados", JSON.stringify([...gruposSelecionados]))
+    } catch { }
+  }, [gruposSelecionados])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("mapa-contatos-selecionados", JSON.stringify([...contatosSelecionados]))
+    } catch { }
+  }, [contatosSelecionados])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -58,7 +91,12 @@ export default function Mapa() {
     const unsub = onSnapshot(q, (snap) => {
       const dados = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       setGrupos(dados)
-      setGruposSelecionados(new Set(dados.map((g: any) => g.id)))
+      // Só marca todos se nunca houve seleção salva
+      setGruposSelecionados((prev) => {
+        const salvo = localStorage.getItem("mapa-grupos-selecionados")
+        if (salvo !== null) return prev  // já tem seleção salva, mantém
+        return new Set(dados.map((g: any) => g.id))  // primeira vez, marca todos
+      })
     })
     return () => unsub()
   }, [usuarioId])
@@ -145,35 +183,14 @@ export default function Mapa() {
         return { id: outroId, nome, circuloId: d.id }
       }))
       setContatos(lista)
-      // Por padrão, todos selecionados
-      setContatosSelecionados(new Set(lista.map(c => c.id)))
+      setContatosSelecionados((prev) => {
+        const salvo = localStorage.getItem("mapa-contatos-selecionados")
+        if (salvo !== null) return prev
+        return new Set(lista.map(c => c.id))
+      })
     })
     return () => unsub()
   }, [usuarioId])
-
-  async function carregarRotaHoje() {
-    if (!usuarioId) return
-    if (mostrarRota) {
-      setMostrarRota(false)
-      setPontosRota([])
-      return
-    }
-    const hoje = new Date().toISOString().split("T")[0]
-    const { collection: col, query: q2, where: w2, orderBy: ob, getDocs } = await import("firebase/firestore")
-    const consulta = q2(
-      col(db, "historico_rotas"),
-      w2("usuario_id", "==", usuarioId),
-      w2("data", "==", hoje),
-      ob("timestamp", "asc")
-    )
-    const snap = await getDocs(consulta)
-    const pontos = snap.docs.map(d => {
-      const data = d.data()
-      return { lat: data.latitude, lng: data.longitude }
-    })
-    setPontosRota(pontos)
-    setMostrarRota(true)
-  }
 
   function toggleGrupo(grupoId: string) {
     setGruposSelecionados((prev) => {
@@ -204,6 +221,8 @@ export default function Mapa() {
   }
 
   function ativarSOSRapido() {
+    // Se já tem SOS ativo, não faz nada (evita duplicar)
+    if (sosAtivo) return
     setModalSOS(true)
     let c = 3
     setContadorSOS(c)
@@ -217,7 +236,7 @@ export default function Mapa() {
     }, 1000)
   }
 
-  function cancelarSOS() {
+  function cancelarContagem() {
     clearInterval(contadorRef.current)
     setModalSOS(false)
     setContadorSOS(null)
@@ -227,49 +246,8 @@ export default function Mapa() {
     clearInterval(contadorRef.current)
     setModalSOS(false)
     setContadorSOS(null)
-
-    navigator.geolocation?.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords
-      const { addDoc, collection: col } = await import("firebase/firestore")
-      await addDoc(col(db, "alertas_sos"), {
-        usuario_id: usuarioId,
-        origem: "app",
-        latitude,
-        longitude,
-        ativo: true,
-        mensagem: "SOS acionado pelo mapa!",
-        criado_em: new Date().toISOString()
-      })
-    }, async () => {
-      const { addDoc, collection: col } = await import("firebase/firestore")
-      await addDoc(col(db, "alertas_sos"), {
-        usuario_id: usuarioId,
-        origem: "app",
-        ativo: true,
-        mensagem: "SOS acionado pelo mapa!",
-        criado_em: new Date().toISOString()
-      })
-    })
+    await acionarSOS(nomeUsuario)
   }
-
-  async function limparRotasAntigas() {
-    if (!usuarioId) return
-    const hoje = new Date().toISOString().split("T")[0]
-    const { collection: col, query: q2, where: w2, getDocs, deleteDoc, doc: d2 } = await import("firebase/firestore")
-
-    try {
-      const consulta = q2(
-        col(db, "historico_rotas"),
-        w2("usuario_id", "==", usuarioId),
-        w2("data", "!=", hoje)
-      )
-      const snap = await getDocs(consulta)
-      await Promise.all(snap.docs.map(ponto => deleteDoc(d2(db, "historico_rotas", ponto.id))))
-    } catch { }
-  }
-  useEffect(() => {
-    if (usuarioId) limparRotasAntigas()
-  }, [usuarioId])
 
   return (
     <div style={{ fontFamily: "sans-serif", backgroundColor: cores.fundo }}>
@@ -293,7 +271,7 @@ export default function Mapa() {
       {/* Mapa Leaflet */}
       <div style={{ width: "100%", height: "calc(100vh - 170px)", position: "relative", zIndex: 0 }}>
         {minhaPos ? (
-          <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} pontosRota={mostrarRota ? pontosRota : []} />
+          <MapaLeaflet minhaPos={minhaPos} localizacoes={localizacoes} centralizar={centralizar} />
         ) : (
           <div style={{ width: "100%", height: "calc(100vh - 170px)", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: cores.fundo, flexDirection: "column", gap: "12px" }}>
             <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: `3px solid ${cores.roxo}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
@@ -316,7 +294,7 @@ export default function Mapa() {
       </div>
 
       {/* Botão grupos */}
-      <div style={{ position: "fixed", bottom: "208px", left: "24px", zIndex: 999 }}>
+      <div style={{ position: "fixed", bottom: "150px", left: "24px", zIndex: 999 }}>
         <button onClick={() => setModalGrupos(true)} style={{
           width: "44px", height: "44px", borderRadius: "50%",
           backgroundColor: cores.branco, border: "none",
@@ -341,13 +319,13 @@ export default function Mapa() {
       {/* Botão SOS */}
       <div style={{ position: "fixed", bottom: "100px", right: "24px", zIndex: 999 }}>
         <button
-          onClick={() => ativarSOSRapido()}
+          onClick={() => sosAtivo ? cancelarSOSFirebase() : ativarSOSRapido()}
           style={{
             width: "64px", height: "64px", borderRadius: "50%",
-            backgroundColor: "#ef4444", border: "4px solid white",
+            backgroundColor: sosAtivo ? "#16a34a" : "#ef4444", border: "4px solid white",
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", boxShadow: "0 4px 20px rgba(239,68,68,0.3)",
-            animation: "pulse-sos 2s ease-in-out infinite"
+            animation: sosAtivo ? "none" : "pulse-sos 2s ease-in-out infinite"
           }}>
           <AlertCircle size={24} color={cores.branco} />
         </button>
@@ -356,7 +334,7 @@ export default function Mapa() {
       {/* Confirmação SOS */}
       {modalSOS && (
         <>
-          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 999 }} />
+          <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 4000 }} />
           <div style={{
             position: "fixed", bottom: 0, left: 0, right: 0,
             backgroundColor: cores.branco, borderRadius: "24px 24px 0 0",
@@ -391,7 +369,7 @@ export default function Mapa() {
               )}
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
-              <button onClick={cancelarSOS} style={{
+              <button onClick={cancelarContagem} style={{
                 flex: 1, padding: "14px", borderRadius: "14px",
                 border: `1.5px solid ${cores.roxoClaro}`,
                 backgroundColor: "transparent", color: cores.roxo,
@@ -411,18 +389,6 @@ export default function Mapa() {
           </div>
         </>
       )}
-
-      {/* Botão histórico de rota */}
-      <div style={{ position: "fixed", bottom: "144px", left: "24px", zIndex: 999 }}>
-        <button onClick={carregarRotaHoje} style={{
-          width: "44px", height: "44px", borderRadius: "50%",
-          backgroundColor: mostrarRota ? cores.roxo : cores.branco,
-          border: "none", display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.15)"
-        }}>
-          <Route size={20} color={mostrarRota ? "white" : cores.roxo} />
-        </button>
-      </div>
 
       {/* Modal grupos e contatos */}
       {modalGrupos && (

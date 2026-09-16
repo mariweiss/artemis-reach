@@ -657,7 +657,7 @@ function AbaChat({ usuario, nomeUsuario }: any) {
             border: "1.5px solid #E8E0F5",
             outline: "none",
             fontSize: "14px",
-            color: "#333",
+            color: cores.texto,
             backgroundColor: cores.fundo
           }}
         />
@@ -1471,7 +1471,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 fontSize: "14px",
                 boxSizing: "border-box",
                 outline: "none",
-                color: "#333"
+                color: cores.texto
               }}
               rows={4}
             />
@@ -1517,7 +1517,7 @@ function AbaComunidade({ usuario, nomeUsuario }: any) {
                 fontSize: "13px",
                 boxSizing: "border-box",
                 outline: "none",
-                color: "#333"
+                color: cores.texto
               }}
             />
 

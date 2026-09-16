@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { doc, getDoc, addDoc, collection, updateDoc } from "firebase/firestore"
+import { doc, getDoc, addDoc, collection, updateDoc, where, query, onSnapshot } from "firebase/firestore"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import {
@@ -25,7 +25,7 @@ import { getCores } from "../cores"
 import { usePresenca } from "../hooks/usePresenca"
 import { useLocalizacao } from "../hooks/useLocalizacao"
 import AvisoBateria from "../componentes/AvisoBateria"
-import {useNotificacaoAlerta} from "../hooks/useNotificacaoAlerta"
+import { useNotificacaoAlerta } from "../hooks/useNotificacaoAlerta"
 
 const nav = [
   { icon: Home, label: "Início", href: "/inicio" },
@@ -71,6 +71,30 @@ export default function Inicio() {
    * Recupera os dados do SOS quando o usuário volta para
    * a tela inicial.
    */
+
+  // Sincroniza com alertas ativos (do mapa ou dispositivo)
+  useEffect(() => {
+    if (!usuario) return
+    const q = query(
+      collection(db, "alertas_sos"),
+      where("usuario_id", "==", usuario.uid),
+      where("ativo", "==", true)
+    )
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        // Existe um SOS ativo (acionado aqui, no mapa ou dispositivo)
+        setSosAtivo(true)
+        setAlertaEnviado(true)
+        setIdAlertaSOS(snap.docs[0].id)
+      } else {
+        // Nenhum SOS ativo → reseta
+        setSosAtivo(false)
+        setAlertaEnviado(false)
+        setIdAlertaSOS(null)
+      }
+    })
+    return () => unsub()
+  }, [usuario])
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -280,12 +304,6 @@ export default function Inicio() {
     setEnviandoSOS(true)
     setAlertaEnviado(false)
     setSosAtivo(true)
-
-    /*
-     * Salva imediatamente que o envio começou.
-     * Assim, se o usuário mudar de aba enquanto
-     * estiver esperando o Firebase, o estado não some.
-     */
     if (usuario) {
       localStorage.setItem(
         `artemis_sos_${usuario.uid}`,
@@ -297,36 +315,23 @@ export default function Inicio() {
     }
 
     try {
-      /*
-       * Verifica se o botão SOS está ativado
-       * nas configurações.
-       */
       const perfilSnap = await getDoc(
         doc(db, "usuarios", usuario?.uid || "")
       )
-
       const sosAtivado =
         perfilSnap.data()?.seguranca?.sosAtivo !== false
-
       if (!sosAtivado) {
         alert(
           "O botão SOS está desativado nas configurações de segurança."
         )
-
         localStorage.removeItem(
           `artemis_sos_${usuario.uid}`
         )
-
         setEnviandoSOS(false)
         setSosAtivo(false)
         setContador(5)
-
         return
       }
-
-      /*
-       * Função responsável por criar o alerta no Firebase.
-       */
       const criarAlerta = async (
         latitude?: number,
         longitude?: number

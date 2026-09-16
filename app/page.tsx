@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthState
 import { doc, setDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
 import { Shield, Smartphone, Bluetooth } from "lucide-react"
+import { useTema } from "./contexts/ThemeContext"
 
 const cores = {
   fundo: "#EEEAF8",
@@ -82,6 +83,7 @@ function Splash({ onFim }: any) {
 }
 
 export default function Home() {
+  const { isDark } = useTema()
   const [splash, setSplash] = useState(true)
   const [tela, setTela] = useState("login")
   const [nome, setNome] = useState("")
@@ -93,7 +95,7 @@ export default function Home() {
   const [carregando, setCarregando] = useState(false)
   const router = useRouter()
 
-    // Verifica se já está logado
+  // Verifica se já está logado
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -154,16 +156,8 @@ export default function Home() {
       padding: "32px 24px", fontFamily: "sans-serif"
     }}>
       {/* Logo */}
-      <div style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: cores.roxo, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-          <circle cx="18" cy="18" r="14" fill="white" opacity="0.9" />
-          <circle cx="23" cy="13" r="11" fill={cores.roxo} />
-          <circle cx="26" cy="8" r="2" fill="white" opacity="0.9" />
-          <circle cx="30" cy="14" r="1.5" fill="white" opacity="0.7" />
-        </svg>
-      </div>
+      <img src="/logo-reach.png" alt="Artemis Reach" style={{ width: "140px", objectFit: "contain", marginBottom: "16px", borderRadius: "16px" }} />
 
-      <h1 style={{ fontSize: "28px", fontWeight: "bold", color: cores.roxoEscuro, margin: 0 }}>Artemis</h1>
       <p style={{ color: cores.roxo, marginBottom: "40px", fontSize: "15px" }}>Sua segurança pessoal em tempo real</p>
 
       <div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "700px", flexWrap: "wrap" }}>
@@ -171,15 +165,15 @@ export default function Home() {
           {
             modo: "echo",
             titulo: "Artemis Echo",
+            logo: isDark ? "/logo-echo-dark.png" : "/logo-echo.png",
             desc: "Conecte-se com seu dispositivo de segurança pessoal para proteção completa e monitoramento avançado",
-            icon: Bluetooth,
             destaque: true
           },
           {
             modo: "reach",
             titulo: "Artemis Reach",
+            logo: isDark ? "/logo-reach-dark.png" : "/logo-reach.png",
             desc: "Use apenas o aplicativo para compartilhar sua localização em tempo real com seu círculo de confiança",
-            icon: Smartphone,
             destaque: false
           }
         ].map(item => (
@@ -202,20 +196,17 @@ export default function Home() {
               e.currentTarget.style.boxShadow = "0 4px 20px rgba(90,73,151,0.1)"
             }}
           >
-            {/* Ícone */}
-            <div style={{
-              width: "64px", height: "64px", borderRadius: "16px",
-              backgroundColor: item.destaque ? cores.roxo : cores.fundo,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 20px"
-            }}>
-              <item.icon size={28} color={item.destaque ? cores.branco : cores.roxo} />
-            </div>
+            {/* Logo */}
+            <img
+              src={item.logo}
+              alt={item.titulo}
+              style={{ width: "90px", height: "90px", objectFit: "contain", margin: "0 auto 16px", display: "block" }}
+            />
 
             <h3 style={{ color: cores.roxoEscuro, margin: "0 0 12px", fontSize: "17px", fontWeight: "700" }}>
               {item.titulo}
             </h3>
-            <p style={{ color: "#888", fontSize: "13px", lineHeight: "1.6", margin: 0 }}>
+            <p style={{ color: cores.roxo, fontSize: "13px", lineHeight: "1.6", margin: 0 }}>
               {item.desc}
             </p>
 
@@ -248,16 +239,12 @@ export default function Home() {
       alignItems: "center", justifyContent: "center",
       padding: "32px 24px", fontFamily: "sans-serif"
     }}>
-      <div style={{ width: "72px", height: "72px", borderRadius: "50%", backgroundColor: cores.roxo, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-          <circle cx="18" cy="18" r="14" fill="white" opacity="0.9" />
-          <circle cx="23" cy="13" r="11" fill={cores.roxo} />
-          <circle cx="26" cy="8" r="2" fill="white" opacity="0.9" />
-          <circle cx="30" cy="14" r="1.5" fill="white" opacity="0.7" />
-        </svg>
-      </div>
-
-      <h1 style={{ fontSize: "28px", fontWeight: "bold", color: cores.roxoEscuro, margin: 0 }}>Artemis</h1>
+      {/* Logo */}
+      <img
+        src={isDark ? "/logo-reach-dark.png" : "/logo-reach.png"}
+        alt="Artemis Reach"
+        style={{ width: "140px", objectFit: "contain", marginBottom: "16px" }}
+      />
       <p style={{ color: cores.roxo, marginBottom: "32px", fontSize: "15px" }}>
         {tela === "login" ? "Bem-vinda de volta" : "Crie sua conta"}
       </p>
