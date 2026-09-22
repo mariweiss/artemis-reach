@@ -56,21 +56,33 @@ function AceitarConviteInner() {
       return
     }
 
-    // CORREÇÃO: antes, todo convite (mesmo de grupo) virava uma conexão
-    // individual em "circulos". Agora verificamos o tipo do convite:
-    // - convite de GRUPO -> adiciona o usuário como membro do grupo
-    // - convite INDIVIDUAL -> cria a conexão 1 a 1, como antes
+    // Se o convite for de GRUPO, adiciona o usuário como membro do grupo.
+    // Se for INDIVIDUAL, cria a conexão 1 a 1 — mas antes CORREÇÃO: verifica
+    // se essa pessoa já é um contato confirmado, para não duplicar o
+    // contato na aba "Contatos".
     if (convite.tipo === "grupo" && convite.grupo_id) {
       await updateDoc(doc(db, "grupos", convite.grupo_id), {
         membros: arrayUnion(usuario.uid)
       })
     } else {
-      await addDoc(collection(db, "circulos"), {
-        usuarios: [convite.criador_id, usuario.uid],
-        status: "confirmado",
-        compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
-        criado_em: new Date().toISOString()
+      const q = query(
+        collection(db, "circulos"),
+        where("usuarios", "array-contains", usuario.uid),
+        where("status", "==", "confirmado")
+      )
+      const snap = await getDocs(q)
+      const jaExiste = snap.docs.some(d => {
+        const data = d.data() as any
+        return data.usuarios.includes(convite.criador_id)
       })
+      if (!jaExiste) {
+        await addDoc(collection(db, "circulos"), {
+          usuarios: [convite.criador_id, usuario.uid],
+          status: "confirmado",
+          compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
+          criado_em: new Date().toISOString()
+        })
+      }
     }
 
     await updateDoc(doc(db, "convites", convite.id), { status: "aceito" })
@@ -128,23 +140,23 @@ function AceitarConviteInner() {
             <Check size={24} color="#16a34a" />
           </div>
           <h2 style={{ color: cores.roxoEscuro }}>
-            {convite?.tipo === "grupo" ? "Você entrou no grupo!" : "Conexão confirmada!"}
+            {convite?.tipo === "grupo" ? "Você entrou no grupo!" : "Contato adicionado!"}
           </h2>
           <p style={{ color: cores.lavanda }}>Redirecionando para o seu círculo...</p>
         </>}
 
         {estado === "valido" && convite && <>
-          {/* CORREÇÃO: texto agora muda conforme o tipo do convite, deixando
-              claro se a pessoa está entrando num grupo específico ou virando
-              um contato individual */}
+          {/* Texto muda conforme o tipo do convite: convite de grupo específico
+              ou convite para virar um contato individual (não mais um texto
+              genérico de "círculo de segurança") */}
           <h2 style={{ color: cores.roxoEscuro, marginBottom: "8px" }}>
-            {convite.tipo === "grupo" ? "Convite de grupo" : "Convite do círculo"}
+            {convite.tipo === "grupo" ? "Convite de grupo" : "Convite de contato"}
           </h2>
           <p style={{ color: cores.lavanda, marginBottom: "24px" }}>
             <strong style={{ color: cores.roxoEscuro }}>{convite.criador_nome}</strong>{" "}
             {convite.tipo === "grupo"
               ? <>te convidou para entrar no grupo <strong style={{ color: cores.roxoEscuro }}>"{convite.grupo_nome}"</strong> no Artemis.</>
-              : <>te convidou para o círculo de segurança no Artemis.</>}
+              : <>quer te adicionar como contato de confiança no Artemis.</>}
           </p>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={recusar} style={{
