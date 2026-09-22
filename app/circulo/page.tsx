@@ -50,6 +50,8 @@ export default function Circulo() {
   const [carregando, setCarregando] = useState(true)
   const [abaAtiva, setAbaAtiva] = useState("grupos")
   const [presencas, setPresencas] = useState<any>({})
+  // NOVO: modal para adicionar um contato já existente diretamente a um grupo
+  const [modalAdicionarContato, setModalAdicionarContato] = useState<any>(null)
 
   useEffect(() => {
     if (!usuario) return
@@ -227,12 +229,22 @@ export default function Circulo() {
   }
 
   async function aceitarConvite(convite: any) {
-    await addDoc(collection(db, "circulos"), {
-      usuarios: [convite.criador_id, usuario.uid],
-      status: "confirmado",
-      compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
-      criado_em: new Date().toISOString()
-    })
+    // CORREÇÃO: antes, isso sempre criava uma conexão individual em
+    // "circulos", mesmo quando o convite era de um grupo. Agora, se o
+    // convite for do tipo "grupo", a pessoa é adicionada aos membros do
+    // grupo de verdade.
+    if (convite.tipo === "grupo" && convite.grupo_id) {
+      await updateDoc(doc(db, "grupos", convite.grupo_id), {
+        membros: arrayUnion(usuario.uid)
+      })
+    } else {
+      await addDoc(collection(db, "circulos"), {
+        usuarios: [convite.criador_id, usuario.uid],
+        status: "confirmado",
+        compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
+        criado_em: new Date().toISOString()
+      })
+    }
     await updateDoc(doc(db, "convites", convite.id), { status: "aceito" })
   }
 
@@ -278,6 +290,19 @@ export default function Circulo() {
       criado_em: new Date().toISOString()
     })
     alert(`${membroNome} adicionada aos seus contatos!`)
+  }
+
+  // NOVO: adiciona um contato já existente (da aba "Contatos") direto
+  // como membro de um grupo específico, sem precisar de link de convite.
+  async function adicionarContatoAoGrupo(grupo: any, contato: any) {
+    if (grupo.membros?.includes(contato.outroId)) {
+      alert(`${contato.nome} já está no grupo "${grupo.nome}"!`)
+      return
+    }
+    await updateDoc(doc(db, "grupos", grupo.id), {
+      membros: arrayUnion(contato.outroId)
+    })
+    alert(`${contato.nome} foi adicionada ao grupo "${grupo.nome}"!`)
   }
 
   if (carregando) return (
@@ -344,7 +369,7 @@ export default function Circulo() {
                     {convite.nomeCriador}
                   </p>
                   <p style={{ margin: 0, fontSize: "12px", color: cores.lavanda }}>
-                    Quer entrar no seu círculo
+                    {convite.tipo === "grupo" ? `Convidou você para o grupo "${convite.grupo_nome}"` : "Quer entrar no seu círculo"}
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
@@ -388,7 +413,11 @@ export default function Circulo() {
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <button onClick={(e) => { e.stopPropagation(); gerarLinkGrupo(grupo) }} style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: cores.fundo, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    {/* NOVO: adicionar contato existente direto no grupo (antes ficava solto fora do grupo) */}
+                    <button onClick={(e) => { e.stopPropagation(); setModalAdicionarContato(grupo) }} style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: "rgba(90,73,151,0.08)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Adicionar contato ao grupo">
+                      <UserPlus size={15} color={cores.roxo} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); gerarLinkGrupo(grupo) }} style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: cores.fundo, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Gerar link de convite para o grupo">
                       <LinkIcon size={15} color={cores.roxo} />
                     </button>
                     {grupo.criador_id === usuario?.uid && (
@@ -558,6 +587,52 @@ export default function Circulo() {
                 Criar grupo
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NOVO Modal: adicionar contato existente a um grupo específico */}
+      {modalAdicionarContato && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.3)", zIndex: 200, display: "flex", alignItems: "flex-end" }}>
+          <div style={{ backgroundColor: cores.branco, width: "100%", borderRadius: "24px 24px 0 0", padding: "24px", maxHeight: "70vh", overflowY: "auto", boxShadow: "0 -4px 24px rgba(90,73,151,0.15)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ color: cores.roxoEscuro, margin: 0, fontSize: "17px" }}>
+                Adicionar contato a "{modalAdicionarContato.nome}"
+              </h3>
+              <button onClick={() => setModalAdicionarContato(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={20} color={cores.lavanda} />
+              </button>
+            </div>
+
+            {conexoes.length === 0 ? (
+              <p style={{ color: cores.lavanda, fontSize: "14px", textAlign: "center", padding: "24px 0" }}>
+                Você ainda não tem contatos. Convide alguém primeiro na aba "Contatos".
+              </p>
+            ) : conexoes.map((contato) => {
+              const jaEstaNoGrupo = modalAdicionarContato.membros?.includes(contato.outroId)
+              return (
+                <div key={contato.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${cores.fundo}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: cores.fundo, display: "flex", alignItems: "center", justifyContent: "center", color: cores.roxo, fontWeight: "700", fontSize: "14px" }}>
+                      {contato.nome?.charAt(0).toUpperCase()}
+                    </div>
+                    <p style={{ margin: 0, fontSize: "14px", fontWeight: "600", color: cores.roxoEscuro }}>{contato.nome}</p>
+                  </div>
+                  <button
+                    disabled={jaEstaNoGrupo}
+                    onClick={() => adicionarContatoAoGrupo(modalAdicionarContato, contato)}
+                    style={{
+                      padding: "8px 14px", borderRadius: "10px", border: "none",
+                      backgroundColor: jaEstaNoGrupo ? cores.fundo : cores.roxo,
+                      color: jaEstaNoGrupo ? cores.lavanda : "white",
+                      cursor: jaEstaNoGrupo ? "default" : "pointer",
+                      fontSize: "13px", fontWeight: "600"
+                    }}>
+                    {jaEstaNoGrupo ? "Já está no grupo" : "Adicionar"}
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

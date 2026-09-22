@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { auth, db } from "../firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc } from "firebase/firestore"
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, arrayUnion } from "firebase/firestore"
 import { Shield, Check } from "lucide-react"
 
 import { useTema } from "../contexts/ThemeContext"
@@ -56,12 +56,23 @@ function AceitarConviteInner() {
       return
     }
 
-    await addDoc(collection(db, "circulos"), {
-      usuarios: [convite.criador_id, usuario.uid],
-      status: "confirmado",
-      compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
-      criado_em: new Date().toISOString()
-    })
+    // CORREÇÃO: antes, todo convite (mesmo de grupo) virava uma conexão
+    // individual em "circulos". Agora verificamos o tipo do convite:
+    // - convite de GRUPO -> adiciona o usuário como membro do grupo
+    // - convite INDIVIDUAL -> cria a conexão 1 a 1, como antes
+    if (convite.tipo === "grupo" && convite.grupo_id) {
+      await updateDoc(doc(db, "grupos", convite.grupo_id), {
+        membros: arrayUnion(usuario.uid)
+      })
+    } else {
+      await addDoc(collection(db, "circulos"), {
+        usuarios: [convite.criador_id, usuario.uid],
+        status: "confirmado",
+        compartilha: { [convite.criador_id]: false, [usuario.uid]: false },
+        criado_em: new Date().toISOString()
+      })
+    }
+
     await updateDoc(doc(db, "convites", convite.id), { status: "aceito" })
     setEstado("aceito")
     setTimeout(() => router.push("/circulo"), 2000)
@@ -116,14 +127,24 @@ function AceitarConviteInner() {
           }}>
             <Check size={24} color="#16a34a" />
           </div>
-          <h2 style={{ color: cores.roxoEscuro }}>Conexão confirmada!</h2>
+          <h2 style={{ color: cores.roxoEscuro }}>
+            {convite?.tipo === "grupo" ? "Você entrou no grupo!" : "Conexão confirmada!"}
+          </h2>
           <p style={{ color: cores.lavanda }}>Redirecionando para o seu círculo...</p>
         </>}
 
         {estado === "valido" && convite && <>
-          <h2 style={{ color: cores.roxoEscuro, marginBottom: "8px" }}>Convite do círculo</h2>
+          {/* CORREÇÃO: texto agora muda conforme o tipo do convite, deixando
+              claro se a pessoa está entrando num grupo específico ou virando
+              um contato individual */}
+          <h2 style={{ color: cores.roxoEscuro, marginBottom: "8px" }}>
+            {convite.tipo === "grupo" ? "Convite de grupo" : "Convite do círculo"}
+          </h2>
           <p style={{ color: cores.lavanda, marginBottom: "24px" }}>
-            <strong style={{ color: cores.roxoEscuro }}>{convite.criador_nome}</strong> te convidou para o círculo de segurança no Artemis.
+            <strong style={{ color: cores.roxoEscuro }}>{convite.criador_nome}</strong>{" "}
+            {convite.tipo === "grupo"
+              ? <>te convidou para entrar no grupo <strong style={{ color: cores.roxoEscuro }}>"{convite.grupo_nome}"</strong> no Artemis.</>
+              : <>te convidou para o círculo de segurança no Artemis.</>}
           </p>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={recusar} style={{
